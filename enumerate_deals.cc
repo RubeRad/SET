@@ -9,6 +9,8 @@ using std::string;
 using std::ostream;
 using std::ostringstream;
 
+#define DIE(msg) { cerr << "FATAL ERROR (" << __LINE__ << "): " << msg << endl; exit(1); }
+
 // 64 bits is long enough for C(81,12)=70724320184700
 typedef unsigned long long BigInt;
 // 8 bits is long enough for everything else
@@ -51,6 +53,18 @@ create_card(BigInt n) {
   return c;
 }
 
+card_type
+create_card(SmaInt number,
+	    SmaInt color,
+	    SmaInt texture,
+	    SmaInt shape)
+{
+  return create_card(27*(number%3) +
+		      9*color      +
+		      3*texture    +
+		        shape);
+}
+
 SmaInt
 compute_number(const card_type& c) {
   return c.attr[0]*27 +
@@ -59,19 +73,36 @@ compute_number(const card_type& c) {
          c.attr[3];
 }
 
+
+const SmaInt GRN = 0;  // alphabetical colors
+const SmaInt PPL = 1;
+const SmaInt RED = 2;
+const SmaInt OPN = 0; // because 0 looks like O, and open is the least filled
+const SmaInt STR = 1; // because striped is intermediate-filled
+const SmaInt SOL = 2; // because solid is most filled
+const SmaInt OVL = 0; // because 0 looks like O
+const SmaInt REC = 1; // because a 1 is pretty straight-lined
+const SmaInt SQG = 2; // because a 2 is pretty squiggly
+
 string tostr(const card_type& c) {
   ostringstream ostr;
   ostr << compute_number(c) << "("
        << (c.attr[0] ? c.attr[0] : 3);  // 1 or 2 as-is, 0=3(mod 3)
-  switch (c.attr[1]) { case 0: ostr << 'r'; break;   // Red
-                       case 1: ostr << 'g'; break;   // Green
-                      default: ostr << 'p'; break; } // Purple
-  switch (c.attr[2]) { case 0: ostr << 's'; break;   // Solid
-                       case 1: ostr << 'o'; break;   // Open
-                      default: ostr << 't'; break; } // sTriped
-  switch (c.attr[3]) { case 0: ostr << 'c'; break;   // reCtangles
-                       case 1: ostr << 'v'; break;   // oVals
-                      default: ostr << 'q'; break; } // sQuiggles
+  switch (c.attr[1]) { case GRN: ostr << 'g'; break;
+                       case PPL: ostr << 'p'; break;  
+                       case RED: ostr << 'r'; break;
+                        default: DIE("Unknown color");
+  }
+  switch (c.attr[2]) { case OPN: ostr << 'o'; break;  
+                       case STR: ostr << 't'; break;
+                       case SOL: ostr << 's'; break;  
+                        default: DIE("Unknown color");
+  }
+  switch (c.attr[3]) { case OVL: ostr << 'v'; break;  
+                       case REC: ostr << 'c'; break;  
+                       case SQG: ostr << 'q'; break;  
+                        default: DIE("Unknown shape");
+  }
   ostr << ")";
   return ostr.str();
 }
@@ -109,6 +140,24 @@ void unrank_deal(BigInt N, SmaInt k,
 
 
 
+// this function is kinda important
+bool is_a_set(const card_type& a,
+	      const card_type& b,
+	      const card_type& c)
+{
+  if ( (a.attr[0] + b.attr[0] + c.attr[0]) % 3 )
+    return false;
+  if ( (a.attr[1] + b.attr[1] + c.attr[1]) % 3 )
+    return false;
+  if ( (a.attr[2] + b.attr[2] + c.attr[2]) % 3 )
+    return false;
+  if ( (a.attr[3] + b.attr[3] + c.attr[3]) % 3 )
+    return false;
+
+  // if we make it here, the card sums to 0mod3 in all three attributes
+  return true;
+}
+
 
 
 void enumerate(SmaInt k) {
@@ -130,21 +179,57 @@ void enumerate(SmaInt k) {
     exit(1);                                    \
   }
 
+#define ASSERT(b,m)                             \
+  if (!b) {                                     \
+    cerr << "ERROR (line " << __LINE__ << "): " \
+	 << "false! " << m << endl;             \
+    exit(1);                                    \
+  }
+
 void self_test() {
   ASSERT_EQ(combinations(81,12), 70724320184700, "C(81,12)");
   
   card_type c = create_card(0);
   for (SmaInt i=0; i<4; ++i)
     ASSERT_EQ(c.attr[i],0, "0");
-  ASSERT_EQ(tostr(c), "0(3rsc)", "Card 0 = 3 Red Solid reCtangles");
+  ASSERT_EQ(tostr(c), "0(3gov)", "Card 0 = 3 Green Open Ovals");
 
-  c = create_card(1*27 + 2*9 + 0*3 + 1);
-  ASSERT_EQ(c.attr[0], 1, "1");
-  ASSERT_EQ(c.attr[1], 2, "2");
-  ASSERT_EQ(c.attr[2], 0, "0");
-  ASSERT_EQ(c.attr[3], 1, "1");
-  ASSERT_EQ(tostr(c), "46(1psv)", "Card 46 = 1 Purple Solid oVal");
+  c = create_card(80);
+  for (SmaInt i=0; i<4; ++i)
+    ASSERT_EQ(c.attr[i],2, "2");
+  ASSERT_EQ(tostr(c), "80(2rsq)", "Card 80 = 2 Red Solid Squiggles");
+
+  card_type c1psv = create_card(1, PPL, SOL, OVL);
+  ASSERT_EQ(c1psv.attr[0], 1, "1");
+  ASSERT_EQ(c1psv.attr[1], 1, "1");
+  ASSERT_EQ(c1psv.attr[2], 2, "2");
+  ASSERT_EQ(c1psv.attr[3], 0, "0");
+  ASSERT_EQ(tostr(c1psv), "42(1psv)", "Card 42 = 1 Purple Solid oVal");
   
+  // build all-different set with c1psv
+  card_type c2roc = create_card(2, RED, OPN, REC);
+  card_type c3gtq = create_card(3, GRN, STR, SQG);
+  ASSERT(is_a_set(c1psv, c2roc, c3gtq), "all-different attribute set");
+
+  // 3-different set with c1psv, all ovals
+  card_type c2rov = create_card(2, RED, OPN, OVL);
+  card_type c3gtv = create_card(3, GRN, STR, OVL);
+  ASSERT(is_a_set(c1psv, c2rov, c3gtv), "3-different attribute set");
+
+  // 2-different set with c1psv, all one solids
+  card_type c1rsq = create_card(1, RED, SOL, SQG);
+  card_type c1gsc = create_card(1, GRN, SOL, REC);
+  ASSERT(is_a_set(c1psv, c1rsq, c1gsc), "2-different attribute set");
+
+  // 1-different set with c1psv, all one purple oval
+  card_type c1pov = create_card(1, PPL, OPN, OVL);
+  card_type c1ptv = create_card(1, PPL, STR, OVL);
+  ASSERT(is_a_set(c1psv, c1pov, c1ptv), "1-different attribute set");
+  
+  // not a set
+  ASSERT(!is_a_set(c1psv, c2roc, c3gtv), "Not a set");
+  
+
   deal_type deal;
   // the 72nd 5-combination is (8,6,3,1,0)
   unrank_deal(72, 5, &deal.card[0]);
@@ -154,6 +239,7 @@ void self_test() {
   ASSERT_EQ(compute_number(deal.card[3]), 1, "1");
   ASSERT_EQ(compute_number(deal.card[4]), 0, "0");
 
+  
 #if 0
   SmaInt k=MAX_DEAL;
   for (BigInt N=0; N<5; ++N) {
