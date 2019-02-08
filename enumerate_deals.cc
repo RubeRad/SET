@@ -163,32 +163,40 @@ bool is_a_set(const card_type& a,
 
 
 // shortcuts a true after a first set is found
-bool has_a_set(const deal_type& d, SmaInt kay) {
+bool has_a_set(const card_type* cards, SmaInt kay) {
   for (SmaInt i=0;   i<kay; ++i)
   for (SmaInt j=i+1; j<kay; ++j)
   for (SmaInt k=j+1; k<kay; ++k)
-    if (is_a_set(d.card[i],
-		 d.card[j],
-		 d.card[k]))
+    if (is_a_set(cards[i],
+		 cards[j],
+		 cards[k]))
       return true;
 
   // if it makes it all the way through the triple loop, then no sets
   return false;
 }
 
+inline bool has_a_set(const deal_type& deal, SmaInt k) 
+  { return has_a_set(&(deal.card[0]), k); }
+
 // Unfortunately this has to iterate through all triples every time
-SmaInt num_sets(const deal_type& d, SmaInt kay) {
+SmaInt num_sets(const card_type* cards, SmaInt kay) {
   SmaInt count=0;
   for (SmaInt i=0;   i<kay; ++i)
   for (SmaInt j=i+1; j<kay; ++j)
   for (SmaInt k=j+1; k<kay; ++k)
-    if (is_a_set(d.card[i],
-		 d.card[j],
-		 d.card[k])) 
+    if (is_a_set(cards[i],
+		 cards[j],
+		 cards[k])) 
       ++count;
 
   return count;
 }
+
+inline SmaInt num_sets(const deal_type& deal, SmaInt k) 
+  { return num_sets(&(deal.card[0]), k); }
+
+
 
 void enumerate(SmaInt k) {
   BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
@@ -224,6 +232,7 @@ void enumerate(SmaInt k) {
     else                    iter->second += 1;
   }
 
+  cout << "\nCOMPLETE ENUMERATION:\n";
   BigInt total=0;
   for (const auto& ns_n : counts) {
     double frac = (ns_n.second*1.0)/NUM_DEALS;
@@ -314,6 +323,24 @@ void self_test() {
   deal.card[8] = create_card(1, GRN, OPN, DMD);
   ASSERT  (has_a_set(deal,9),     "Plane has set(s)");
   ASSERT_EQ(num_sets(deal,9), 12, "Plane has 12 sets");
+
+  // set up the hyperplane in Joy of Set fig 5.25
+  card_type hp[27];
+  SmaInt i=0;
+  hp[i++]=create_card(3,GRN,SOL,OVL); hp[i++]=create_card(2,GRN,SOL,SQG); hp[i++]=create_card(1,GRN,SOL,DMD);
+  hp[i++]=create_card(2,PPL,OPN,OVL); hp[i++]=create_card(1,PPL,OPN,SQG); hp[i++]=create_card(3,PPL,OPN,DMD);
+  hp[i++]=create_card(1,RED,STR,OVL); hp[i++]=create_card(3,RED,STR,SQG); hp[i++]=create_card(2,RED,STR,DMD);
+
+  hp[i++]=create_card(1,PPL,STR,OVL); hp[i++]=create_card(3,PPL,STR,SQG); hp[i++]=create_card(2,PPL,STR,DMD);
+  hp[i++]=create_card(3,RED,SOL,OVL); hp[i++]=create_card(2,RED,SOL,SQG); hp[i++]=create_card(1,RED,SOL,DMD);
+  hp[i++]=create_card(2,GRN,OPN,OVL); hp[i++]=create_card(1,GRN,OPN,SQG); hp[i++]=create_card(3,GRN,OPN,DMD);
+
+  hp[i++]=create_card(2,RED,OPN,OVL); hp[i++]=create_card(1,RED,OPN,SQG); hp[i++]=create_card(3,RED,OPN,DMD);
+  hp[i++]=create_card(1,GRN,STR,OVL); hp[i++]=create_card(3,GRN,STR,SQG); hp[i++]=create_card(2,GRN,STR,DMD);
+  hp[i++]=create_card(3,PPL,SOL,OVL); hp[i++]=create_card(2,PPL,SOL,SQG); hp[i++]=create_card(1,PPL,SOL,DMD);
+  ASSERT_EQ(num_sets(hp,27), 117, "Hyperplane has 117 sets");
+
+
 
   
 #if 0
