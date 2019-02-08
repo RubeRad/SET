@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <sstream>
+#include <map>
 
 using std::cout;
 using std::cerr;
@@ -8,6 +9,7 @@ using std::endl;
 using std::string;
 using std::ostream;
 using std::ostringstream;
+using std::map;
 
 #define DIE(msg) { cerr << "FATAL ERROR (" << __LINE__ << "): " << msg << endl; exit(1); }
 
@@ -83,6 +85,7 @@ const SmaInt SOL = 2; // because solid is most filled
 const SmaInt OVL = 0; // because 0 looks like O
 const SmaInt REC = 1; // because a 1 is pretty straight-lined
 const SmaInt SQG = 2; // because a 2 is pretty squiggly
+const SmaInt DMD = 1; // Joy of Set has Diamonds, not Rectangles!
 
 string tostr(const card_type& c) {
   ostringstream ostr;
@@ -159,16 +162,55 @@ bool is_a_set(const card_type& a,
 }
 
 
+// shortcuts a true after a first set is found
+bool has_a_set(const deal_type& d, SmaInt kay) {
+  for (SmaInt i=0;   i<kay; ++i)
+  for (SmaInt j=i+1; j<kay; ++j)
+  for (SmaInt k=j+1; k<kay; ++k)
+    if (is_a_set(d.card[i],
+		 d.card[j],
+		 d.card[k]))
+      return true;
+
+  // if it makes it all the way through the triple loop, then no sets
+  return false;
+}
+
+// Unfortunately this has to iterate through all triples every time
+SmaInt num_sets(const deal_type& d, SmaInt kay) {
+  SmaInt count=0;
+  for (SmaInt i=0;   i<kay; ++i)
+  for (SmaInt j=i+1; j<kay; ++j)
+  for (SmaInt k=j+1; k<kay; ++k)
+    if (is_a_set(d.card[i],
+		 d.card[j],
+		 d.card[k])) 
+      ++count;
+
+  return count;
+}
 
 void enumerate(SmaInt k) {
   BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
   cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
 
-  SmaInt count=0, sign=1;
+  map<SmaInt, BigInt> counts;
+  deal_type d;
   for (BigInt deali=0; deali<NUM_DEALS; ++deali) {
-    ++count;
-    sign *= -1;
+    unrank_deal(deali, k, &(d.card[0]));
+    SmaInt ns = num_sets(d, k);
+
+    auto iter = counts.find(ns);
+    if (iter == counts.end()) counts[ns]  = 1;
+    else                    iter->second += 1;
   }
+
+  BigInt total=0;
+  for (const auto& ns_n : counts) {
+    cout << ns_n.first << " sets: " << ns_n.second << endl;
+    total += ns_n.second;
+  }
+  cout << "Total: " << total << endl << endl;
 }
 
 
@@ -239,6 +281,21 @@ void self_test() {
   ASSERT_EQ(compute_number(deal.card[3]), 1, "1");
   ASSERT_EQ(compute_number(deal.card[4]), 0, "0");
 
+
+  // set up the plane in Joy of Set fig 1.21
+  deal.card[0] = create_card(1, GRN, STR, DMD);
+  deal.card[1] = create_card(3, PPL, SOL, SQG);
+  deal.card[2] = create_card(2, RED, STR, OVL);
+  deal.card[3] = create_card(2, RED, OPN, OVL);
+  deal.card[4] = create_card(3, PPL, STR, SQG);
+  deal.card[5] = create_card(1, GRN, SOL, DMD);
+  deal.card[6] = create_card(3, PPL, OPN, SQG);
+  deal.card[7] = create_card(2, RED, SOL, OVL);
+  deal.card[8] = create_card(1, GRN, OPN, DMD);
+  ASSERT  (has_a_set(deal,9),     "Plane has set(s)");
+  ASSERT_EQ(num_sets(deal,9), 12, "Plane has 12 sets");
+
+  
   
 #if 0
   SmaInt k=MAX_DEAL;
