@@ -194,10 +194,29 @@ void enumerate(SmaInt k) {
   BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
   cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
 
+  BigInt INTERVAL=1000000;
   map<SmaInt, BigInt> counts;
   deal_type d;
   for (BigInt deali=0; deali<NUM_DEALS; ++deali) {
+
     unrank_deal(deali, k, &(d.card[0]));
+
+    // intermittent reporting
+    if (deali>0 && deali%INTERVAL==0) {
+      cout << "Current deal:";
+      for (SmaInt i=0; i<k; ++i)
+	cout << " " << tostr(d.card[i]);
+      cout << endl;
+      
+      BigInt total=0;
+      for (const auto& ns_n : counts) {
+	double frac = (ns_n.second*1.0)/deali;
+	cout << ns_n.first << " sets: " << ns_n.second << " " << frac << endl;
+	total += ns_n.second;
+      }
+      cout << "Total: " << total << endl << endl;
+    }
+
     SmaInt ns = num_sets(d, k);
 
     auto iter = counts.find(ns);
@@ -207,7 +226,8 @@ void enumerate(SmaInt k) {
 
   BigInt total=0;
   for (const auto& ns_n : counts) {
-    cout << ns_n.first << " sets: " << ns_n.second << endl;
+    double frac = (ns_n.second*1.0)/NUM_DEALS;
+    cout << ns_n.first << " sets: " << ns_n.second << " " << frac << endl;
     total += ns_n.second;
   }
   cout << "Total: " << total << endl << endl;
@@ -296,7 +316,6 @@ void self_test() {
   ASSERT_EQ(num_sets(deal,9), 12, "Plane has 12 sets");
 
   
-  
 #if 0
   SmaInt k=MAX_DEAL;
   for (BigInt N=0; N<5; ++N) {
@@ -314,6 +333,7 @@ void self_test() {
     cout << endl;
   }
 #endif
+
   cout << "Self-tests passed" << endl;
 }
 
