@@ -211,10 +211,10 @@ void enumerate(SmaInt k) {
 
     // intermittent reporting
     if (deali>0 && deali%INTERVAL==0) {
-      cout << "Current deal:";
-      for (SmaInt i=0; i<k; ++i)
-	cout << " " << tostr(d.card[i]);
-      cout << endl;
+      // cout << "Current deal:";
+      // for (SmaInt i=0; i<k; ++i)
+      // 	cout << " " << tostr(d.card[i]);
+      // cout << endl;
       
       BigInt total=0;
       for (const auto& ns_n : counts) {
@@ -340,7 +340,20 @@ void self_test() {
   hp[i++]=create_card(3,PPL,SOL,OVL); hp[i++]=create_card(2,PPL,SOL,SQG); hp[i++]=create_card(1,PPL,SOL,DMD);
   ASSERT_EQ(num_sets(hp,27), 117, "Hyperplane has 117 sets");
 
+  // set up the maximal cap in Joy of Set fig 5.23
+  card_type mc[20];
+  i=0;
+  mc[i++]=create_card(2,GRN,SOL,SQG); mc[i++]=create_card(2,RED,STR,DMD); mc[i++]=create_card(3,RED,OPN,SQG);
+  mc[i++]=create_card(1,GRN,STR,DMD); mc[i++]=create_card(3,RED,SOL,SQG); mc[i++]=create_card(2,RED,STR,OVL);
+  mc[i++]=create_card(3,RED,STR,DMD); mc[i++]=create_card(1,GRN,SOL,SQG); mc[i++]=create_card(2,GRN,OPN,DMD);
 
+  mc[i++]=create_card(1,GRN,OPN,DMD); mc[i++]=create_card(1,RED,SOL,SQG); mc[i++]=create_card(3,GRN,STR,DMD);
+  mc[i++]=create_card(2,GRN,SOL,OVL); mc[i++]=create_card(2,GRN,OPN,SQG); mc[i++]=create_card(2,RED,OPN,DMD);
+  mc[i++]=create_card(2,RED,OPN,SQG); mc[i++]=create_card(3,PPL,OPN,SQG); mc[i++]=create_card(1,PPL,OPN,DMD);
+
+  mc[i++]=create_card(3,RED,SOL,DMD); mc[i++]=create_card(1,GRN,STR,SQG);
+  ASSERT(!has_a_set(mc,20), "Maximal cap has no set");
+  
 
   
 #if 0
@@ -375,7 +388,6 @@ int main(int argc, char**argv) {
 
   for (int i=1; i<argc; ++i) {
     SmaInt k = (SmaInt)atoi(argv[i]);
-
     enumerate(k);
   }
 }
