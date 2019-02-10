@@ -1,7 +1,13 @@
 #include <stdlib.h>
 #include <iostream>
 #include <sstream>
-#include <map>
+
+// instructions to install OpenCL for linux development:
+// https://wiki.tiker.net/OpenCLHowTo
+#define CL_TARGET_OPENCL_VERSION 220
+#include <CL/cl.h>
+
+
 
 using std::cout;
 using std::cerr;
@@ -9,18 +15,18 @@ using std::endl;
 using std::string;
 using std::ostream;
 using std::ostringstream;
-using std::map;
 
 #define DIE(msg) { cerr << "FATAL ERROR (" << __LINE__ << "): " << msg << endl; exit(1); }
 
 // 64 bits is long enough for C(81,12)=70724320184700
-typedef unsigned long long BigInt;
+typedef cl_ulong BigInt; // cl_ulong is unsigned __int64 in cl_platform.h
 // 8 bits is long enough for everything else
  // but short prints as an int, so that's easier
-typedef unsigned short     SmaInt;
+typedef cl_ushort SmaInt;
 
 const SmaInt NUM_CARDS=81; // 3^4 for 4 attributes of 3 values
 const SmaInt MAX_DEAL=12;  // if technology permits this might be increased
+const SmaInt DEAL_SIZE=5;  // used in num_sets_kernel
 BigInt CHOOSE[NUM_CARDS+1][MAX_DEAL+1]; // C(0,0) up to C(81,12)
 
 // Used to populate CHOOSE[][] up front, then hopefully never again
@@ -117,6 +123,7 @@ ostream& operator<<(ostream& ostr, const card_type& c) {
   
 
 
+
 // Using the combinatorial number system, convert a number into the
 // combination corresponding to that number
 // See https://en.wikipedia.org/wiki/Combinatorial_number_system
@@ -197,49 +204,84 @@ inline SmaInt num_sets(const deal_type& deal, SmaInt k)
   { return num_sets(&(deal.card[0]), k); }
 
 
+int get_global_id(int dum) { return dum; }
 
-void enumerate(SmaInt k) {
-  BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
-  cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
+// assuming DEAL_SIZE is constant/defined
+// assuming CHOOSE[][] is populated
+void
+num_sets_kernel(const BigInt* DEALI, // which deal, in combinatorial order
+                SmaInt* num_sets_deal) // output
+{
+   int i=get_global_id(0);
 
-  BigInt INTERVAL=1000000;
-  map<SmaInt, BigInt> counts;
-  deal_type d;
-  for (BigInt deali=0; deali<NUM_DEALS; ++deali) {
+   deal_type d;
+   unrank_deal(DEALI[i], DEAL_SIZE, &(d.card[0]));
+   num_sets_deal[i] = num_sets(d, DEAL_SIZE);
+}
 
-    unrank_deal(deali, k, &(d.card[0]));
 
-    // intermittent reporting
-    if (deali>0 && deali%INTERVAL==0) {
-      // cout << "Current deal:";
-      // for (SmaInt i=0; i<k; ++i)
-      // 	cout << " " << tostr(d.card[i]);
-      // cout << endl;
+void enumerate(SmaInt k,
+               BigInt BATCHSIZE) {
+   BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
+   cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
+
+   BigInt counts[22]; // internet sez max sets for 12 cards is 22
+   for (int i=0; i<22; ++i)
+      counts[i]=0;
+  
+   BigInt* DEALI_VEC = new BigInt[BATCHSIZE];
+   SmaInt* ANSAS_VEC = new SmaInt[BATCHSIZE];
+
+   BigInt OFF=0;
+   while (OFF < NUM_DEALS) {
+      // Most batches are full, last one may be less
+      BigInt NUM = BATCHSIZE;
+      if (OFF+NUM > NUM_DEALS)
+         NUM = NUM_DEALS-OFF;
       
-      BigInt total=0;
-      for (const auto& ns_n : counts) {
-	double frac = (ns_n.second*1.0)/deali;
-	cout << ns_n.first << " sets: " << ns_n.second << " " << frac << endl;
-	total += ns_n.second;
+      // Now OFF is number processed so far,
+      // NUM is how many to process this batch
+      
+      // Populate vector of deal numbers to process
+      for (BigInt I=0; I<NUM; ++I)
+         DEALI_VEC[I] = OFF+I;
+
+      // TBD copy DEALI_VEC into device buffer
+
+      // For now serially process
+      // TBD kick off kernels to execute work group
+      for (BigInt I=0; I<NUM; ++I)
+         num_sets_kernel(DEALI_VEC+I,
+                         ANSAS_VEC+I);
+
+      // TBD copy ANSAS_VEC from device buffer
+
+      // tabulate this batch of ansas
+      for (BigInt I=0; I<NUM; ++I) {
+         SmaInt ansa = ANSAS_VEC[I];
+         counts[ansa]++;
       }
-      cout << "Total: " << total << endl << endl;
-    }
 
-    SmaInt ns = num_sets(d, k);
+      // Now that we are done with this batch, roll NUM into OFF
+      OFF += NUM;
+      // Now again OFF is the number of deals processed so far
+      // if OFF==NUM_DEALS this is the last time through the while loop
+      
+      // intermittent reporting
+      BigInt TOTAL=0; // should add up to NUM_DEALS when we're done
+      for (SmaInt i=0; i<22; ++i) {
+         if (counts[i]==0)
+            continue;
+         double frac = (counts[i]*1.0)/OFF;
+         cout << i << " sets: " << counts[i] << " " << frac << endl;
+         TOTAL += counts[i];
+      }
+      cout << "Total: " << TOTAL << endl << endl;
+      
+   } // loop through all batches
 
-    auto iter = counts.find(ns);
-    if (iter == counts.end()) counts[ns]  = 1;
-    else                    iter->second += 1;
-  }
-
-  cout << "\nCOMPLETE ENUMERATION:\n";
-  BigInt total=0;
-  for (const auto& ns_n : counts) {
-    double frac = (ns_n.second*1.0)/NUM_DEALS;
-    cout << ns_n.first << " sets: " << ns_n.second << " " << frac << endl;
-    total += ns_n.second;
-  }
-  cout << "Total: " << total << endl << endl;
+   delete[] DEALI_VEC;
+   delete[] ANSAS_VEC;
 }
 
 
@@ -379,6 +421,11 @@ void self_test() {
 
 int main(int argc, char**argv) {
 
+  cl_uint n_plats;
+  clGetPlatformIDs(0, 0, &n_plats);
+  cout << "platforms: " << n_plats << endl;
+  
+
   for   (SmaInt n=0; n<=NUM_CARDS; ++n)
     for (SmaInt k=0; k<=MAX_DEAL;  ++k)
       CHOOSE[n][k] = combinations(n,k);
@@ -386,8 +433,6 @@ int main(int argc, char**argv) {
   if (1) 
     self_test();
 
-  for (int i=1; i<argc; ++i) {
-    SmaInt k = (SmaInt)atoi(argv[i]);
-    enumerate(k);
-  }
+  
+  enumerate(DEAL_SIZE, 100000);
 }
