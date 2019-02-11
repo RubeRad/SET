@@ -14,17 +14,10 @@ using std::string;
 using std::ostream;
 using std::ostringstream;
 
-#define DIE(msg) { cerr << "FATAL ERROR (" << __LINE__ << "): " << msg << endl; exit(1); }
+#define DEVICE_CODE 0
+#define   HOST_CODE 1
+#include "enumerate_deals.cl"
 
-// 64 bits is long enough for C(81,12)=70724320184700
-typedef cl_ulong BigInt; // cl_ulong is unsigned __int64 in cl_platform.h
-// 8 bits is long enough for everything else
- // but short prints as an int, so that's easier
-typedef cl_ushort SmaInt;
-
-const SmaInt NUM_CARDS=81; // 3^4 for 4 attributes of 3 values
-const SmaInt MAX_DEAL=12;  // if technology permits this might be increased
-const SmaInt DEAL_SIZE=5;  // used in num_sets_kernel
 BigInt CHOOSE[NUM_CARDS+1][MAX_DEAL+1]; // C(0,0) up to C(81,12)
 
 // Used to populate CHOOSE[][] up front, then hopefully never again
@@ -40,35 +33,17 @@ BigInt combinations(SmaInt n, SmaInt k) {
   return C;
 }
 
-// avoid dynamic stl containers for performance
-typedef struct card_type_s { SmaInt attr[4]; } card_type;
-
-// a deal is an array of card numbers 0...80, and also a corresponding
-// array of card_type structs
-typedef struct deal_type_s { card_type card[MAX_DEAL]; } deal_type;
-
-// for card number n=0..80, use modular arithmetic to create a card
-// with 4 attribtes valued 0,1,2
-card_type
-create_card(BigInt n) {
-  card_type c;
-  c.attr[0] = n/27;  n %= 27;         
-  c.attr[1] = n/9 ;  n %= 9;          
-  c.attr[2] = n/3 ;  n %= 3;          
-  c.attr[3] = n;   
-  return c;
-}
 
 card_type
 create_card(SmaInt number,
-	    SmaInt color,
-	    SmaInt texture,
-	    SmaInt shape)
+            SmaInt color,
+            SmaInt texture,
+            SmaInt shape)
 {
   return create_card(27*(number%3) +
-		      9*color      +
-		      3*texture    +
-		        shape);
+                       9*color      +
+                       3*texture    +
+                       shape);
 }
 
 SmaInt
@@ -78,6 +53,8 @@ compute_number(const card_type& c) {
          c.attr[2]*3  +
          c.attr[3];
 }
+
+
 
 
 const SmaInt GRN = 0;  // alphabetical colors
@@ -207,7 +184,7 @@ int get_global_id(int dum) { return dum; }
 // assuming DEAL_SIZE is constant/defined
 // assuming CHOOSE[][] is populated
 void
-num_sets_kernel(const BigInt* DEALI, // which deal, in combinatorial order
+num_sets_serial(const BigInt* DEALI, // which deal, in combinatorial order
                 SmaInt* num_sets_deal) // output
 {
    int i=get_global_id(0);
@@ -269,14 +246,22 @@ void enumerate(SmaInt k,
       exit(1);
    }
    const int MAX_SOURCE_SIZE = 1000000;
-   char* source_str = new char[MAX_SOURCE_SIZE];
-   size_t source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
+   char* source_txt = new char[MAX_SOURCE_SIZE];
+   size_t source_size = fread(source_txt, 1, MAX_SOURCE_SIZE, fp);
    fclose(fp);
    cout << "Read CL source length " << source_size << endl;
+
+   string source_str;
+   source_str += "#define DEVICE_CODE 1\n";
+   source_str += "#define   HOST_CODE 0\n";
+   //source_str += "__constant const SmaInt DEAL_SIZE="<<k<<";\n";
+   source_str += source_txt;
+   source_size = source_str.length();
+   const char* source_ptr = source_str.c_str();
    
    // Create and build the program
    cl_program program = clCreateProgramWithSource(context, 1, 
-       (const char **)&source_str, (const size_t *)&source_size, &ret);
+       &source_ptr, (const size_t *)&source_size, &ret);
    cout << "clCreateProgramWithSource returns " << ret << endl;
    
    ret = clBuildProgram(program, 1, &device_id,
@@ -291,7 +276,7 @@ void enumerate(SmaInt k,
    cout << "Build log:\n" << log << endl;
 
    // Create the OpenCL kernel
-   cl_kernel kernel = clCreateKernel(program, "num_sets", &ret);
+   cl_kernel kernel = clCreateKernel(program, "num_sets_kernel", &ret);
    cout << "clCreateKernel returns " << ret << endl;
    
    // Set the arguments of the kernel
@@ -321,11 +306,11 @@ void enumerate(SmaInt k,
 
       // Serially process
       for (BigInt I=0; I<NUM; ++I)
-         num_sets_kernel(DEALI_VEC+I,
+         num_sets_serial(DEALI_VEC+I,
                          ANSA1_VEC+I);
 
       // Execute kernels
-      size_t global_item_size=NUM, local_item_size = 1;
+      size_t global_item_size=NUM, local_item_size = 64;
       ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
             &global_item_size, &local_item_size, 0, NULL, NULL);
       cout << "clEnqueueNDRangeKernel returns " << ret << endl;
@@ -387,6 +372,9 @@ void enumerate(SmaInt k,
 	 << "false! " << m << endl;             \
     exit(1);                                    \
   }
+
+
+
 
 void self_test() {
   ASSERT_EQ(combinations(81,12), 70724320184700, "C(81,12)");

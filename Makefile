@@ -7,8 +7,8 @@ CXXFLAGS =             #-I$(CLINC) -L$(CLLIB)
 all: enumerate_deals
 
 
-enumerate_deals: enumerate_deals.cc
-	$(CXX) $(CXXFLAGS) -o enumerate_deals $^ -lOpenCL
+enumerate_deals: enumerate_deals.cc enumerate_deals.cl
+	$(CXX) $(CXXFLAGS) -o enumerate_deals enumerate_deals.cc -lOpenCL
 
 cltest: cltest.cc
 	$(CXX) $(CXXFLAGS) -o cltest $^ -lOpenCL
