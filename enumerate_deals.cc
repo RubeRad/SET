@@ -2,12 +2,10 @@
 #include <iostream>
 #include <sstream>
 
-// instructions to install OpenCL for linux development:
-// https://wiki.tiker.net/OpenCLHowTo
-#define CL_TARGET_OPENCL_VERSION 220
+// from Intel:
+// intel_sdk_for_opencl_2017_7.0.0.2568_x64.tgz
+// opencl_runtime_16.1.2_x64_rh_6.4.0.37.tgz
 #include <CL/cl.h>
-
-
 
 using std::cout;
 using std::cerr;
@@ -225,13 +223,83 @@ void enumerate(SmaInt k,
    BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
    cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
 
-   BigInt counts[22]; // internet sez max sets for 12 cards is 22
+   BigInt counts1[22]; // internet sez max sets for 12 cards is 22
+   BigInt counts2[22];
    for (int i=0; i<22; ++i)
-      counts[i]=0;
-  
-   BigInt* DEALI_VEC = new BigInt[BATCHSIZE];
-   SmaInt* ANSAS_VEC = new SmaInt[BATCHSIZE];
+      counts1[i]=0;
 
+   BigInt* DEALI_VEC = new BigInt[BATCHSIZE];
+   SmaInt* ANSA1_VEC = new SmaInt[BATCHSIZE]; // serial verification
+   SmaInt* ANSA2_VEC = new SmaInt[BATCHSIZE]; // kernel results
+
+   // Get platform and device information
+   cl_platform_id platform_id = NULL;
+   cl_device_id device_id = NULL;   
+   cl_uint ret_num_devices;
+   cl_uint ret_num_platforms;
+   cl_int ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+   cout << "clGetPlatformIDs returns " << ret << endl;
+    
+   ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, 
+                        &device_id, &ret_num_devices);
+   cout << "clGetDeviceIDs returns " << ret << endl;
+
+   // Create an OpenCL context
+   cl_context context = clCreateContext( NULL, 1, &device_id, NULL, NULL, &ret);
+   cout << "clCreateContext returns " << ret << endl;
+   
+   // Create a command queue
+   cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, device_id, NULL, &ret);
+   cout << "clCreateCommandQueueWithProperties returns " << ret << endl;
+
+   // Create memory buffers on the device for each vector 
+   cl_mem inn_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, 
+                                   BATCHSIZE * sizeof(BigInt), NULL, &ret);
+   cout << "clClCreateBuffer(inn) returns " << ret << endl;
+   
+   cl_mem out_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 
+                                   BATCHSIZE * sizeof(SmaInt), NULL, &ret);
+   cout << "clClCreateBuffer(out) returns " << ret << endl;
+   
+
+   FILE* fp;
+   fp = fopen("enumerate_deals.cl", "r");
+   if (!fp) {
+      fprintf(stderr, "Failed to load kernel.\n");
+      exit(1);
+   }
+   const int MAX_SOURCE_SIZE = 1000000;
+   char* source_str = new char[MAX_SOURCE_SIZE];
+   size_t source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
+   fclose(fp);
+   cout << "Read CL source length " << source_size << endl;
+   
+   // Create and build the program
+   cl_program program = clCreateProgramWithSource(context, 1, 
+       (const char **)&source_str, (const size_t *)&source_size, &ret);
+   cout << "clCreateProgramWithSource returns " << ret << endl;
+   
+   ret = clBuildProgram(program, 1, &device_id,
+                        "-I/usr/include/x86_64-linux-gnu",
+                        NULL, NULL);
+   cout << "clBuildProgram returns " << ret << endl;
+
+   char log[2048];
+   size_t logsize;
+   ret = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG,
+                               sizeof(log), log, &logsize);
+   cout << "Build log:\n" << log << endl;
+
+   // Create the OpenCL kernel
+   cl_kernel kernel = clCreateKernel(program, "num_sets", &ret);
+   cout << "clCreateKernel returns " << ret << endl;
+   
+   // Set the arguments of the kernel
+   ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&inn_obj);
+   cout << "clSetKernelArg(inn) returns " << ret << endl;
+   ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&out_obj);
+   cout << "clSetKernelArg(out) returns " << ret << endl;
+   
    BigInt OFF=0;
    while (OFF < NUM_DEALS) {
       // Most batches are full, last one may be less
@@ -246,21 +314,41 @@ void enumerate(SmaInt k,
       for (BigInt I=0; I<NUM; ++I)
          DEALI_VEC[I] = OFF+I;
 
-      // TBD copy DEALI_VEC into device buffer
+      // copy DEALI_VEC into device buffer
+      ret = clEnqueueWriteBuffer(command_queue, inn_obj, CL_TRUE, 0,
+            NUM * sizeof(BigInt), DEALI_VEC, 0, NULL, NULL);
+      cout << "clClEnqueueWriteBuffer returns " << ret << endl;
 
-      // For now serially process
-      // TBD kick off kernels to execute work group
+      // Serially process
       for (BigInt I=0; I<NUM; ++I)
          num_sets_kernel(DEALI_VEC+I,
-                         ANSAS_VEC+I);
+                         ANSA1_VEC+I);
 
-      // TBD copy ANSAS_VEC from device buffer
+      // Execute kernels
+      size_t global_item_size=NUM, local_item_size = 1;
+      ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
+            &global_item_size, &local_item_size, 0, NULL, NULL);
+      cout << "clEnqueueNDRangeKernel returns " << ret << endl;
+
+      // copy ANSA2_VEC from device buffer
+      ret = clEnqueueReadBuffer(command_queue, out_obj, CL_TRUE, 0, 
+            NUM * sizeof(SmaInt), ANSA2_VEC, 0, NULL, NULL);
+      cout << "clClEnqueueReadBuffer returns " << ret << endl;
 
       // tabulate this batch of ansas
+      for (int ii=0; ii<22; ++ii) counts2[ii] = 0;
       for (BigInt I=0; I<NUM; ++I) {
-         SmaInt ansa = ANSAS_VEC[I];
-         counts[ansa]++;
+         SmaInt ansa1 = ANSA1_VEC[I];
+         counts1[ansa1]++;
+         SmaInt ansa2 = ANSA2_VEC[I];
+         counts2[ansa2]++;
+         if (ansa2 != ansa1)
+            cout << "Wrong answer for " << OFF+I
+                 << ": correct = " << ansa1
+                 << ": wrong = "   << ansa2 << endl;
       }
+      for (int ii=0; ii<22; ++ii)
+         cout << "Counts2 " << counts2[ii] << endl;
 
       // Now that we are done with this batch, roll NUM into OFF
       OFF += NUM;
@@ -270,18 +358,19 @@ void enumerate(SmaInt k,
       // intermittent reporting
       BigInt TOTAL=0; // should add up to NUM_DEALS when we're done
       for (SmaInt i=0; i<22; ++i) {
-         if (counts[i]==0)
+         if (counts1[i]==0)
             continue;
-         double frac = (counts[i]*1.0)/OFF;
-         cout << i << " sets: " << counts[i] << " " << frac << endl;
-         TOTAL += counts[i];
+         double frac = (counts1[i]*1.0)/OFF;
+         cout << i << " sets: " << counts1[i] << " " << frac << endl;
+         TOTAL += counts1[i];
       }
       cout << "Total: " << TOTAL << endl << endl;
       
    } // loop through all batches
 
    delete[] DEALI_VEC;
-   delete[] ANSAS_VEC;
+   delete[] ANSA1_VEC;
+   delete[] ANSA2_VEC;
 }
 
 
@@ -434,5 +523,5 @@ int main(int argc, char**argv) {
     self_test();
 
   
-  enumerate(DEAL_SIZE, 100000);
+  enumerate(DEAL_SIZE, 1024);
 }
