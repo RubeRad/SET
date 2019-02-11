@@ -18,7 +18,6 @@ using std::ostringstream;
 #define   HOST_CODE 1
 #include "enumerate_deals.cl"
 
-BigInt CHOOSE[NUM_CARDS+1][MAX_DEAL+1]; // C(0,0) up to C(81,12)
 
 // Used to populate CHOOSE[][] up front, then hopefully never again
 BigInt combinations(SmaInt n, SmaInt k) {
@@ -97,13 +96,11 @@ ostream& operator<<(ostream& ostr, const card_type& c) {
 }
   
 
-
-
 // Using the combinatorial number system, convert a number into the
 // combination corresponding to that number
 // See https://en.wikipedia.org/wiki/Combinatorial_number_system
 void unrank_deal(BigInt N, SmaInt k,
-		 card_type* card_ptr)
+                 card_type* card_ptr)
 {
   if (k==1) {
     *card_ptr = create_card(N);
@@ -122,7 +119,6 @@ void unrank_deal(BigInt N, SmaInt k,
   // unrank smaller combination starting with next pointer
   unrank_deal(N - CHOOSE[n][k], k-1, card_ptr+1);
 }
-
 
 
 // this function is kinda important
@@ -196,7 +192,9 @@ num_sets_serial(const BigInt* DEALI, // which deal, in combinatorial order
 
 
 void enumerate(SmaInt k,
-               BigInt BATCHSIZE) {
+               BigInt BATCHSIZE)
+{
+   DEAL_SIZE=k;
    BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
    cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
 
@@ -251,13 +249,34 @@ void enumerate(SmaInt k,
    fclose(fp);
    cout << "Read CL source length " << source_size << endl;
 
-   string source_str;
-   source_str += "#define DEVICE_CODE 1\n";
-   source_str += "#define   HOST_CODE 0\n";
-   //source_str += "__constant const SmaInt DEAL_SIZE="<<k<<";\n";
-   source_str += source_txt;
+   string source_str = source_txt;
+   size_t pos = source_str.find("//SNIP");
+   
+   
+
+   ostringstream ostr;
+   ostr << "#define DEVICE_CODE 1\n"
+        << "#define   HOST_CODE 0\n"
+        << source_str.substr(0,pos)
+        << "__constant const SmaInt DEAL_SIZE="<<k<<";\n"
+        << "__constant const BigInt CHOOSE[" << NUM_CARDS+1 << "]["
+        << MAX_DEAL+1 << "] = {\n";
+
+   for (int top=0; top<=NUM_CARDS; ++top) {
+      ostr << "   {" << CHOOSE[top][0];
+      for (int bot=1; bot<=MAX_DEAL; ++bot)
+         ostr << ", " << CHOOSE[top][bot];
+      ostr << (top < NUM_CARDS ? "},\n" : "}\n");
+   }
+   ostr << "};\n\n";
+
+   ostr << source_str.substr(pos);
+
+   source_str = ostr.str();
    source_size = source_str.length();
    const char* source_ptr = source_str.c_str();
+
+   cout << "Full source\n\n" << source_str << "\n\n";
    
    // Create and build the program
    cl_program program = clCreateProgramWithSource(context, 1, 
@@ -511,5 +530,7 @@ int main(int argc, char**argv) {
     self_test();
 
   
-  enumerate(DEAL_SIZE, 1024);
+  enumerate(3, 1024);
+  enumerate(4, 1024);
+  enumerate(5, 1024);
 }
