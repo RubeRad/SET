@@ -166,20 +166,21 @@ num_sets_serial(const BigInt* DEALI, // which deal, in combinatorial order
 
 
 void enumerate(SmaInt k,
-               BigInt BATCHSIZE)
+               BigInt BATCHSIZE,
+               bool verify=false)
 {
    DEAL_SIZE=k;
    BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
    cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
 
-   BigInt counts1[22]; // internet sez max sets for 12 cards is 22
-   BigInt counts2[22];
+   BigInt counts_hst[22]; // internet sez max sets for 12 cards is 22
+   BigInt counts_dev[22];
    for (int i=0; i<22; ++i)
-      counts1[i]=0;
+      counts_hst[i] = counts_dev[i] = 0;
 
    BigInt* DEALI_VEC = new BigInt[BATCHSIZE];
-   SmaInt* ANSA1_VEC = new SmaInt[BATCHSIZE]; // serial verification
-   SmaInt* ANSA2_VEC = new SmaInt[BATCHSIZE]; // kernel results
+   SmaInt* HST_ANSAS = new SmaInt[BATCHSIZE]; // serial verification
+   SmaInt* DEV_ANSAS = new SmaInt[BATCHSIZE]; // kernel results
 
    // Get platform and device information
    cl_platform_id platform_id = NULL;
@@ -299,9 +300,11 @@ void enumerate(SmaInt k,
          cout << "clClEnqueueWriteBuffer returns " << ret << endl;
 
       // Serially process
-      for (BigInt I=0; I<NUM; ++I)
-         num_sets_serial(DEALI_VEC+I,
-                         ANSA1_VEC+I);
+      if (verify) {
+         for (BigInt I=0; I<NUM; ++I)
+            num_sets_serial(DEALI_VEC+I,
+                            HST_ANSAS+I);
+      }
 
       // Execute kernels
       size_t global_item_size=NUM, local_item_size = 64;
@@ -310,26 +313,27 @@ void enumerate(SmaInt k,
       if (ret!=CL_SUCCESS)
          cout << "clEnqueueNDRangeKernel returns " << ret << endl;
 
-      // copy ANSA2_VEC from device buffer
+      // copy DEV_ANSAS from device buffer
       ret = clEnqueueReadBuffer(command_queue, out_obj, CL_TRUE, 0, 
-            NUM * sizeof(SmaInt), ANSA2_VEC, 0, NULL, NULL);
+            NUM * sizeof(SmaInt), DEV_ANSAS, 0, NULL, NULL);
       if (ret!=CL_SUCCESS)
          cout << "clClEnqueueReadBuffer returns " << ret << endl;
 
       // tabulate this batch of ansas
-      for (int ii=0; ii<22; ++ii) counts2[ii] = 0;
       for (BigInt I=0; I<NUM; ++I) {
-         SmaInt ansa1 = ANSA1_VEC[I];
-         counts1[ansa1]++;
-         SmaInt ansa2 = ANSA2_VEC[I];
-         counts2[ansa2]++;
-         if (ansa2 != ansa1)
-            cout << "Wrong answer for " << OFF+I
-                 << ": correct = " << ansa1
-                 << ": wrong = "   << ansa2 << endl;
+         SmaInt ansa_dev = DEV_ANSAS[I];
+         counts_dev[ansa_dev]++;
+         if (verify) {
+            SmaInt ansa_hst = HST_ANSAS[I];
+            counts_hst[ansa_hst]++;
+            if (ansa_dev != ansa_hst)
+               cout << "Wrong answer for " << OFF+I
+                    << ": correct = " << ansa_hst
+                    << ": wrong = "   << ansa_dev << endl;
+         }
       }
       // for (int ii=0; ii<22; ++ii)
-      //    cout << "Counts2 " << counts2[ii] << endl;
+      //    cout << "Counts_Dev " << counts_dev[ii] << endl;
 
       // Now that we are done with this batch, roll NUM into OFF
       OFF += NUM;
@@ -339,19 +343,19 @@ void enumerate(SmaInt k,
       // intermittent reporting
       BigInt TOTAL=0; // should add up to NUM_DEALS when we're done
       for (SmaInt i=0; i<22; ++i) {
-         if (counts1[i]==0)
+         if (counts_dev[i]==0)
             continue;
-         double frac = (counts1[i]*1.0)/OFF;
-         cout << i << " sets: " << counts1[i] << " " << frac << endl;
-         TOTAL += counts1[i];
+         double frac = (counts_dev[i]*1.0)/OFF;
+         cout << i << " sets: " << counts_dev[i] << " " << frac << endl;
+         TOTAL += counts_dev[i];
       }
       cout << "Total: " << TOTAL << endl << endl;
       
    } // loop through all batches
 
    delete[] DEALI_VEC;
-   delete[] ANSA1_VEC;
-   delete[] ANSA2_VEC;
+   delete[] HST_ANSAS;
+   delete[] DEV_ANSAS;
 }
 
 
@@ -509,9 +513,11 @@ int main(int argc, char**argv) {
   if (1) 
     self_test();
 
-  if (argc==3) {
-     SmaInt k = atoi(argv[1]);
+  string VERIFY("VERIFY");
+  bool verify = (argc>=4 && VERIFY==argv[3]);
+  if (argc>=3) {
+     SmaInt k         = atoi(argv[1]);
      BigInt BATCHSIZE = atoi(argv[2]);
-     enumerate(k, BATCHSIZE);
+     enumerate(k, BATCHSIZE, verify);
   }
 }
