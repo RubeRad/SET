@@ -99,6 +99,7 @@ ostream& operator<<(ostream& ostr, const card_type& c) {
 // Using the combinatorial number system, convert a number into the
 // combination corresponding to that number
 // See https://en.wikipedia.org/wiki/Combinatorial_number_system
+// original flavor (recursive)
 void unrank_deal(BigInt N, SmaInt k,
                  card_type* card_ptr)
 {
@@ -120,25 +121,10 @@ void unrank_deal(BigInt N, SmaInt k,
   unrank_deal(N - CHOOSE[n][k], k-1, card_ptr+1);
 }
 
-
-// this function is kinda important
-bool is_a_set(const card_type& a,
-	      const card_type& b,
-	      const card_type& c)
-{
-  if ( (a.attr[0] + b.attr[0] + c.attr[0]) % 3 )
-    return false;
-  if ( (a.attr[1] + b.attr[1] + c.attr[1]) % 3 )
-    return false;
-  if ( (a.attr[2] + b.attr[2] + c.attr[2]) % 3 )
-    return false;
-  if ( (a.attr[3] + b.attr[3] + c.attr[3]) % 3 )
-    return false;
-
-  // if we make it here, the card sums to 0mod3 in all three attributes
-  return true;
-}
-
+inline bool is_a_set(const card_type& a,
+                     const card_type& b,
+                     const card_type& c)
+  { return is_a_set(&a, &b, &c); } 
 
 // shortcuts a true after a first set is found
 bool has_a_set(const card_type* cards, SmaInt kay) {
@@ -157,19 +143,7 @@ bool has_a_set(const card_type* cards, SmaInt kay) {
 inline bool has_a_set(const deal_type& deal, SmaInt k) 
   { return has_a_set(&(deal.card[0]), k); }
 
-// Unfortunately this has to iterate through all triples every time
-SmaInt num_sets(const card_type* cards, SmaInt kay) {
-  SmaInt count=0;
-  for (SmaInt i=0;   i<kay; ++i)
-  for (SmaInt j=i+1; j<kay; ++j)
-  for (SmaInt k=j+1; k<kay; ++k)
-    if (is_a_set(cards[i],
-		 cards[j],
-		 cards[k])) 
-      ++count;
 
-  return count;
-}
 
 inline SmaInt num_sets(const deal_type& deal, SmaInt k) 
   { return num_sets(&(deal.card[0]), k); }
@@ -321,7 +295,8 @@ void enumerate(SmaInt k,
       // copy DEALI_VEC into device buffer
       ret = clEnqueueWriteBuffer(command_queue, inn_obj, CL_TRUE, 0,
             NUM * sizeof(BigInt), DEALI_VEC, 0, NULL, NULL);
-      cout << "clClEnqueueWriteBuffer returns " << ret << endl;
+      if (ret!=CL_SUCCESS)
+         cout << "clClEnqueueWriteBuffer returns " << ret << endl;
 
       // Serially process
       for (BigInt I=0; I<NUM; ++I)
@@ -332,12 +307,14 @@ void enumerate(SmaInt k,
       size_t global_item_size=NUM, local_item_size = 64;
       ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
             &global_item_size, &local_item_size, 0, NULL, NULL);
-      cout << "clEnqueueNDRangeKernel returns " << ret << endl;
+      if (ret!=CL_SUCCESS)
+         cout << "clEnqueueNDRangeKernel returns " << ret << endl;
 
       // copy ANSA2_VEC from device buffer
       ret = clEnqueueReadBuffer(command_queue, out_obj, CL_TRUE, 0, 
             NUM * sizeof(SmaInt), ANSA2_VEC, 0, NULL, NULL);
-      cout << "clClEnqueueReadBuffer returns " << ret << endl;
+      if (ret!=CL_SUCCESS)
+         cout << "clClEnqueueReadBuffer returns " << ret << endl;
 
       // tabulate this batch of ansas
       for (int ii=0; ii<22; ++ii) counts2[ii] = 0;
@@ -351,8 +328,8 @@ void enumerate(SmaInt k,
                  << ": correct = " << ansa1
                  << ": wrong = "   << ansa2 << endl;
       }
-      for (int ii=0; ii<22; ++ii)
-         cout << "Counts2 " << counts2[ii] << endl;
+      // for (int ii=0; ii<22; ++ii)
+      //    cout << "Counts2 " << counts2[ii] << endl;
 
       // Now that we are done with this batch, roll NUM into OFF
       OFF += NUM;
@@ -397,6 +374,14 @@ void enumerate(SmaInt k,
 
 void self_test() {
   ASSERT_EQ(combinations(81,12), 70724320184700, "C(81,12)");
+
+  deal_type recurse, serial;
+  unrank_deal       (12345678, 12, &(recurse.card[0])); // trusted
+  unrank_deal_serial(12345678, 12, &serial); // tested
+  for (int i=0; i<12; ++i)   // for all 12 cards
+     for (int j=0; j<4; ++j) // for all 4 attributes
+        ASSERT_EQ(recurse.card[i].attr[j],
+                   serial.card[i].attr[j], "serial unranking matches recursive");
   
   card_type c = create_card(0);
   for (SmaInt i=0; i<4; ++i)
@@ -516,21 +501,17 @@ void self_test() {
 }
 
 int main(int argc, char**argv) {
-
-  cl_uint n_plats;
-  clGetPlatformIDs(0, 0, &n_plats);
-  cout << "platforms: " << n_plats << endl;
-  
-
-  for   (SmaInt n=0; n<=NUM_CARDS; ++n)
-    for (SmaInt k=0; k<=MAX_DEAL;  ++k)
-      CHOOSE[n][k] = combinations(n,k);
+   // precompute table of combinations up to C(81,12)
+   for   (SmaInt n=0; n<=NUM_CARDS; ++n)
+      for (SmaInt k=0; k<=MAX_DEAL;  ++k)
+         CHOOSE[n][k] = combinations(n,k);
 
   if (1) 
     self_test();
 
-  
-  enumerate(3, 1024);
-  enumerate(4, 1024);
-  enumerate(5, 1024);
+  if (argc==3) {
+     SmaInt k = atoi(argv[1]);
+     BigInt BATCHSIZE = atoi(argv[2]);
+     enumerate(k, BATCHSIZE);
+  }
 }

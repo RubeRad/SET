@@ -53,6 +53,54 @@ create_card(BigInt n) {
   return c;
 }
 
+// extra crispy (device code cannot recurse)
+void unrank_deal_serial(BigInt origN, SmaInt origk,
+                        deal_type* deal)
+{
+   BigInt N = origN;
+   for (SmaInt k=origk; k>1; --k) {
+      SmaInt n=0; // find last n for which C(n,k) <= N
+      while (CHOOSE[n][k] <= N)
+         ++n;
+      // now n>CHOOSE[n][k], so back up 1
+      --n;
+      deal->card[origk-k] = create_card(n);
+      N -= CHOOSE[n][k];
+   }
+   // now k==1, put the result in the last card of the deal
+   deal->card[origk-1] = create_card(N);
+}
+
+
+// this function is kinda important
+bool is_a_set(const card_type* a,
+              const card_type* b,
+              const card_type* c)
+{
+  if ( (a->attr[0] + b->attr[0] + c->attr[0]) % 3 )
+    return false;
+  if ( (a->attr[1] + b->attr[1] + c->attr[1]) % 3 )
+    return false;
+  if ( (a->attr[2] + b->attr[2] + c->attr[2]) % 3 )
+    return false;
+  if ( (a->attr[3] + b->attr[3] + c->attr[3]) % 3 )
+    return false;
+
+  // if we make it here, the card sums to 0mod3 in all three attributes
+  return true;
+}
+
+
+// This has to iterate through all triples every time
+SmaInt num_sets(const card_type* cards, SmaInt kay) {
+  SmaInt count=0;
+  for (SmaInt i=0;   i<kay; ++i)
+  for (SmaInt j=i+1; j<kay; ++j)
+  for (SmaInt k=j+1; k<kay; ++k)
+    if (is_a_set(cards+i, cards+j, cards+k)) 
+       ++count;
+  return count;
+}
 
 
 #if DEVICE_CODE
@@ -62,13 +110,11 @@ __kernel void num_sets_kernel(
 {
    int i=get_global_id(0);
 
-   BigInt test = CHOOSE[81][12];
-
-   // TBD build up all the code needed here
-//    //deal_type d;
-//    //unrank_deal(DEALI[i], DEAL_SIZE, &(d.card[0]));
-//    //num_sets_deal[i] = num_sets(d, DEAL_SIZE);
-   num_sets_deal[i] = DEALI[i] % DEAL_SIZE;
+   BigInt N = DEALI[i];
+   SmaInt k = DEAL_SIZE;
+   deal_type d;
+   unrank_deal_serial(N, k, &d);
+   num_sets_deal[i] = num_sets(&d.card[0], DEAL_SIZE);
 }
 #endif
 
