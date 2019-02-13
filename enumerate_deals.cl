@@ -20,6 +20,7 @@ typedef cl_ushort SmaInt;
 
 DUAL_CONST SmaInt NUM_CARDS=81; // 3^4 for 4 attributes of 3 values
 DUAL_CONST SmaInt MAX_DEAL=12;  // if technology permits this might be increased
+DUAL_CONST SmaInt NUM_COUNTS=23; // internet sez max SETs in 12 cards is 22
 
 #if DEVICE_CODE
 //SNIP
@@ -103,18 +104,36 @@ SmaInt num_sets(const card_type* cards, SmaInt kay) {
 }
 
 
-#if DEVICE_CODE
-__kernel void num_sets_kernel(
-   __global const BigInt* DEALI, // which deal, in combinatorial order
-   __global       SmaInt* num_sets_deal) // output
+#if HOST_CODE
+// Compile the same kernel code within the serial program for testing
+void num_sets_kernel(
+   BigInt taski, // replaces get_global_id(0);
+   const BigInt* DEALI,
+   BigInt* COUNTS)
 {
-   int i=get_global_id(0);
 
-   BigInt N = DEALI[i];
+#else
+
+// The real OpenCL kernel
+__kernel void num_sets_kernel(
+   __global const BigInt* DEALI,  // Bounds for deal numbers to process
+   __global       BigInt* COUNTS) // output, organized as 23 per kernel
+{
+   int taski=get_global_id(0);
+
+#endif
+
+   BigInt NBEG = DEALI[taski];
+   BigInt NEND = DEALI[taski+1];
    SmaInt k = DEAL_SIZE;
    deal_type d;
-   unrank_deal_serial(N, k, &d);
-   num_sets_deal[i] = num_sets(&d.card[0], DEAL_SIZE);
+   BigInt OFF = taski*NUM_COUNTS;
+   
+   for (BigInt N=NBEG; N<NEND; ++N) {
+      unrank_deal_serial(N, k, &d);
+      SmaInt nSETs = num_sets(&d.card[0], DEAL_SIZE);
+      COUNTS[OFF+nSETs]++;
+   }
 }
-#endif
+
 

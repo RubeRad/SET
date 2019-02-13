@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <time.h>
 #include <iostream>
 #include <sstream>
 
@@ -149,38 +150,25 @@ inline SmaInt num_sets(const deal_type& deal, SmaInt k)
   { return num_sets(&(deal.card[0]), k); }
 
 
-int get_global_id(int dum) { return dum; }
 
-// assuming DEAL_SIZE is constant/defined
-// assuming CHOOSE[][] is populated
-void
-num_sets_serial(const BigInt* DEALI, // which deal, in combinatorial order
-                SmaInt* num_sets_deal) // output
-{
-   int i=get_global_id(0);
-
-   deal_type d;
-   unrank_deal(DEALI[i], DEAL_SIZE, &(d.card[0]));
-   num_sets_deal[i] = num_sets(d, DEAL_SIZE);
-}
-
-
-void enumerate(SmaInt k,
-               BigInt BATCHSIZE,
-               bool verify=false)
+void enumerate(SmaInt k,         // deal size
+               BigInt PARALLELS, // number of parallel units to task
+               BigInt BATCHSIZE) // number of deals per task
 {
    DEAL_SIZE=k;
    BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
    cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
 
-   BigInt counts_hst[22]; // internet sez max sets for 12 cards is 22
-   BigInt counts_dev[22];
-   for (int i=0; i<22; ++i)
-      counts_hst[i] = counts_dev[i] = 0;
-
-   BigInt* DEALI_VEC = new BigInt[BATCHSIZE];
-   SmaInt* HST_ANSAS = new SmaInt[BATCHSIZE]; // serial verification
-   SmaInt* DEV_ANSAS = new SmaInt[BATCHSIZE]; // kernel results
+   // starting/ending deal numbers for each unit
+   BigInt* DEALI_VEC = new BigInt[PARALLELS+1];
+   // kernel results; NUM_COUNTS per 
+   BigInt* PARALLEL_COUNTS = new BigInt[PARALLELS*NUM_COUNTS];
+   BigInt TOTAL_COUNTS[NUM_COUNTS];
+   for (SmaInt i=0;  i<NUM_COUNTS;  ++i) {
+      TOTAL_COUNTS[i] = 0;
+      for (BigInt J=0; J<PARALLELS; ++J)
+         PARALLEL_COUNTS[J*NUM_COUNTS + i] = 0;
+   }
 
    // Get platform and device information
    cl_platform_id platform_id = NULL;
@@ -204,12 +192,17 @@ void enumerate(SmaInt k,
 
    // Create memory buffers on the device for each vector 
    cl_mem inn_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, 
-                                   BATCHSIZE * sizeof(BigInt), NULL, &ret);
+                  (PARALLELS+1) * sizeof(BigInt),          NULL, &ret);
    cout << "clClCreateBuffer(inn) returns " << ret << endl;
    
-   cl_mem out_obj = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 
-                                   BATCHSIZE * sizeof(SmaInt), NULL, &ret);
+   cl_mem out_obj = clCreateBuffer(context, CL_MEM_READ_WRITE,
+                  (PARALLELS*NUM_COUNTS) * sizeof(BigInt), NULL, &ret);
    cout << "clClCreateBuffer(out) returns " << ret << endl;
+
+   // make sure device-side COUNTS buffer is initialized with zeroes
+   ret = clEnqueueWriteBuffer(command_queue, out_obj, CL_TRUE, 0,
+           (PARALLELS*NUM_COUNTS) * sizeof(BigInt), PARALLEL_COUNTS, 0, NULL, NULL);;
+   cout << "clClEnqueueWriteBuffer returns " << ret << endl;
    
 
    FILE* fp;
@@ -280,82 +273,105 @@ void enumerate(SmaInt k,
    cout << "clSetKernelArg(out) returns " << ret << endl;
    
    BigInt OFF=0;
-   while (OFF < NUM_DEALS) {
-      // Most batches are full, last one may be less
-      BigInt NUM = BATCHSIZE;
-      if (OFF+NUM > NUM_DEALS)
-         NUM = NUM_DEALS-OFF;
-      
-      // Now OFF is number processed so far,
-      // NUM is how many to process this batch
-      
-      // Populate vector of deal numbers to process
-      for (BigInt I=0; I<NUM; ++I)
-         DEALI_VEC[I] = OFF+I;
 
+   //NUM_DEALS = 100000000; // only for test-running the first 'few'
+
+   clock_t t0 = clock();
+   while (OFF < NUM_DEALS) {
+      // OFF is number processed so far,
+
+      BigInt NUM = PARALLELS*BATCHSIZE; // how many to do in a full loop
+      if (OFF+NUM > NUM_DEALS)          // last one may not be full
+         NUM = NUM_DEALS-OFF;
+      // NUM is how many to process this loop
+
+      BigInt PER = NUM / PARALLELS;
+      if (PER*PARALLELS < NUM)
+         PER +=1;
+
+      // Populate vector of deal numbers to process
+      // task i will work on DEALI_VEC[i]<=j<DEALI_VEC[i+1]
+      for (BigInt I=0; I<PARALLELS; ++I) {
+         DEALI_VEC[I] = OFF + I*PER;
+         //cout << "task " << I << " starts with " << DEALI_VEC[I] << endl;
+      }
+      DEALI_VEC[PARALLELS] = OFF+NUM;
+      //cout << "task " << PARALLELS-1 << " ends with " << DEALI_VEC[PARALLELS] << endl;
+      
       // copy DEALI_VEC into device buffer
       ret = clEnqueueWriteBuffer(command_queue, inn_obj, CL_TRUE, 0,
-            NUM * sizeof(BigInt), DEALI_VEC, 0, NULL, NULL);
+              (PARALLELS+1) * sizeof(BigInt), DEALI_VEC, 0, NULL, NULL);;
       if (ret!=CL_SUCCESS)
          cout << "clClEnqueueWriteBuffer returns " << ret << endl;
 
-      // Serially process
-      if (verify) {
-         for (BigInt I=0; I<NUM; ++I)
-            num_sets_serial(DEALI_VEC+I,
-                            HST_ANSAS+I);
-      }
-
       // Execute kernels
-      size_t global_item_size=NUM, local_item_size = 64;
+      size_t global_item_size=PARALLELS, local_item_size = PARALLELS;
       ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
             &global_item_size, &local_item_size, 0, NULL, NULL);
       if (ret!=CL_SUCCESS)
          cout << "clEnqueueNDRangeKernel returns " << ret << endl;
 
-      // copy DEV_ANSAS from device buffer
+      // copy answers from device buffer
       ret = clEnqueueReadBuffer(command_queue, out_obj, CL_TRUE, 0, 
-            NUM * sizeof(SmaInt), DEV_ANSAS, 0, NULL, NULL);
+                (PARALLELS*NUM_COUNTS) * sizeof(BigInt), PARALLEL_COUNTS, 0, NULL, NULL);
       if (ret!=CL_SUCCESS)
          cout << "clClEnqueueReadBuffer returns " << ret << endl;
 
+
+#if 0
+      // Overwrite with serially-computed values
+      for (BigInt I=0; I<PARALLELS; ++I) {
+         for (SmaInt j=0; j<NUM_COUNTS; ++j)
+            PARALLEL_COUNTS[I*NUM_COUNTS + j] = 0;
+         
+         num_sets_kernel(I,
+                         DEALI_VEC,
+                         PARALLEL_COUNTS);
+      }
+#endif
+
+      
       // tabulate this batch of ansas
-      for (BigInt I=0; I<NUM; ++I) {
-         SmaInt ansa_dev = DEV_ANSAS[I];
-         counts_dev[ansa_dev]++;
-         if (verify) {
-            SmaInt ansa_hst = HST_ANSAS[I];
-            counts_hst[ansa_hst]++;
-            if (ansa_dev != ansa_hst)
-               cout << "Wrong answer for " << OFF+I
-                    << ": correct = " << ansa_hst
-                    << ": wrong = "   << ansa_dev << endl;
+      for (SmaInt j=0; j<NUM_COUNTS; ++j) {
+         TOTAL_COUNTS[j] = 0; // reset to 0, PARALLEL_COUNTS are cumulative
+         for (BigInt I=0; I<PARALLELS; ++I) {
+            TOTAL_COUNTS[j] += PARALLEL_COUNTS[I*NUM_COUNTS + j];
+            //cout << I << " " << j << " " << PARALLEL_COUNTS[I*NUM_COUNTS + j] << endl;
          }
       }
-      // for (int ii=0; ii<22; ++ii)
-      //    cout << "Counts_Dev " << counts_dev[ii] << endl;
+            
 
       // Now that we are done with this batch, roll NUM into OFF
       OFF += NUM;
-      // Now again OFF is the number of deals processed so far
+      // Once again OFF is the number of deals processed so far
       // if OFF==NUM_DEALS this is the last time through the while loop
       
       // intermittent reporting
-      BigInt TOTAL=0; // should add up to NUM_DEALS when we're done
-      for (SmaInt i=0; i<22; ++i) {
-         if (counts_dev[i]==0)
-            continue;
-         double frac = (counts_dev[i]*1.0)/OFF;
-         cout << i << " sets: " << counts_dev[i] << " " << frac << endl;
-         TOTAL += counts_dev[i];
+      clock_t dt = clock() - t0;
+      double seconds = (dt*1.0)/CLOCKS_PER_SEC;
+      double frac = (OFF*1.0)/NUM_DEALS;
+      if (OFF==NUM_DEALS) cout << "FINAL,"<<k<<","<<OFF<<","<<seconds;
+      else                cout << frac    <<k<<","<<OFF<<","<<seconds;
+      for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+         cout << ",";
+         if (TOTAL_COUNTS[i])
+            cout << TOTAL_COUNTS[i];
       }
-      cout << "Total: " << TOTAL << endl << endl;
+      cout << endl;
+
+      // BigInt TOTAL=0; // should add up to NUM_DEALS when we're done
+      // for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+      //    double frac = (TOTAL_COUNTS[i]*1.0)/OFF;
+      //    cout << i << " sets: " << counts_dev[i] << " " << frac << endl;
+      //    TOTAL += counts_dev[i];
+      // }
+      
+      //cout << "Total: " << TOTAL << " " << (TOTAL*1.0)/NUM_DEALS << endl << endl;
       
    } // loop through all batches
 
    delete[] DEALI_VEC;
-   delete[] HST_ANSAS;
-   delete[] DEV_ANSAS;
+   delete[] PARALLEL_COUNTS;
 }
 
 
@@ -513,11 +529,10 @@ int main(int argc, char**argv) {
   if (1) 
     self_test();
 
-  string VERIFY("VERIFY");
-  bool verify = (argc>=4 && VERIFY==argv[3]);
-  if (argc>=3) {
+  if (argc>=4) {
      SmaInt k         = atoi(argv[1]);
-     BigInt BATCHSIZE = atoi(argv[2]);
-     enumerate(k, BATCHSIZE, verify);
+     BigInt PARALLELS = atoi(argv[2]);
+     BigInt BATCHSIZE = atoi(argv[3]);
+     enumerate(k, PARALLELS, BATCHSIZE);
   }
 }
