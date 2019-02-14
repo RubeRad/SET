@@ -71,52 +71,22 @@ void unrank_deal_serial(BigInt origN, SmaInt origk,
 
 
 // this function is kinda important
-bool is_a_set(const card_type* a,
-              const card_type* b,
-              const card_type* c)
-{
-  if ( (a->attr[0] + b->attr[0] + c->attr[0]) % 3 )
-    return false;
-  if ( (a->attr[1] + b->attr[1] + c->attr[1]) % 3 )
-    return false;
-  if ( (a->attr[2] + b->attr[2] + c->attr[2]) % 3 )
-    return false;
-  if ( (a->attr[3] + b->attr[3] + c->attr[3]) % 3 )
-    return false;
-
-  // if we make it here, the card sums to 0mod3 in all three attributes
-  return true;
-}
-
-// this function is even more important, much faster than above
-bool is_a_set(const card_num a,
-              const card_num b,
-              const card_num c)
+inline bool is_a_set(const card_num a,
+                     const card_num b,
+                     const card_num c)
 {
    return (c==THIRD[a][b]);
 }
 
 
 // This has to iterate through all triples every time
-SmaInt num_sets(const card_type* cards, SmaInt kay) {
-  SmaInt count=0;
-  for (SmaInt i=0;   i<kay; ++i)
-  for (SmaInt j=i+1; j<kay; ++j)
-  for (SmaInt k=j+1; k<kay; ++k)
-    if (is_a_set(cards+i, cards+j, cards+k)) 
-       ++count;
-  return count;
-}
-
-// This has to iterate through all triples every time
 SmaInt num_sets(const deal_type* d, SmaInt kay) {
   SmaInt count=0;
   for (SmaInt i=0;   i<kay; ++i)
   for (SmaInt j=i+1; j<kay; ++j)
-  for (SmaInt k=j+1; k<kay; ++k) {
-    if (is_a_set(d->card[i], d->card[j], d->card[k])) 
+  for (SmaInt k=j+1; k<kay; ++k)
+    if (d->card[k] == THIRD[d->card[i]][d->card[j]])
        ++count;
-  }
   return count;
 }
 

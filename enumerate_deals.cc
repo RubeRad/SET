@@ -148,10 +148,44 @@ void unrank_deal(BigInt N, SmaInt k,
   unrank_deal(N - CHOOSE[n][k], k-1, card_ptr+1);
 }
 
+
+// this is slower, now that we switched to cards stored just as numbers 0..80,
+// and is_a_set just checking the precomputed table of THIRDs
+bool is_a_set(const card_type* a,
+              const card_type* b,
+              const card_type* c)
+{
+  if ( (a->attr[0] + b->attr[0] + c->attr[0]) % 3 )
+    return false;
+  if ( (a->attr[1] + b->attr[1] + c->attr[1]) % 3 )
+    return false;
+  if ( (a->attr[2] + b->attr[2] + c->attr[2]) % 3 )
+    return false;
+  if ( (a->attr[3] + b->attr[3] + c->attr[3]) % 3 )
+    return false;
+
+  // if we make it here, the card sums to 0mod3 in all three attributes
+  return true;
+}
+
 inline bool is_a_set(const card_type& a,
                      const card_type& b,
                      const card_type& c)
   { return is_a_set(&a, &b, &c); } 
+
+
+
+// This has to iterate through all triples every time
+SmaInt num_sets(const card_type* cards, SmaInt kay) {
+  SmaInt count=0;
+  for (SmaInt i=0;   i<kay; ++i)
+  for (SmaInt j=i+1; j<kay; ++j)
+  for (SmaInt k=j+1; k<kay; ++k)
+    if (is_a_set(cards+i, cards+j, cards+k)) 
+       ++count;
+  return count;
+}
+
 
 // shortcuts a true after a first set is found
 bool has_a_set(const card_type* cards, SmaInt kay) {
@@ -177,6 +211,160 @@ bool has_a_set(const deal_type& d, SmaInt kay) {
   // if it makes it all the way through the triple loop, then no sets
   return false;
 }
+
+
+
+
+////////////////////////////////////////////////////////////////////////
+// Unit tests. They're fast enough, might as well run them every time
+#define ASSERT_EQ(a,b,m)	                \
+  if (a!=b) {                                   \
+    cerr << "ERROR (line " << __LINE__ << "): " \
+	 << a << "!=" << b << " " << m << endl;	\
+    exit(1);                                    \
+  }
+
+#define ASSERT(b,m)                             \
+  if (!b) {                                     \
+    cerr << "ERROR (line " << __LINE__ << "): " \
+	 << "false! " << m << endl;             \
+    exit(1);                                    \
+  }
+
+void self_test() {
+  ASSERT_EQ(combinations(81,12), 70724320184700, "C(81,12)");
+
+  for (SmaInt a=0; a<NUM_CARDS; ++a)
+  for (SmaInt b=0; b<NUM_CARDS; ++b)
+     ASSERT(is_a_set(a,b, THIRD[a][b]), "THIRD card verification");
+
+  deal_type recurse, serial;
+  unrank_deal       (12345678, 12, &(recurse.card[0])); // trusted
+  unrank_deal_serial(12345678, 12, &serial); // tested
+  for (int i=0; i<12; ++i)   // for all 12 cards
+        ASSERT_EQ(recurse.card[i],
+                   serial.card[i], "serial unranking matches recursive");
+  
+  card_type c = create_card(0);
+  for (SmaInt i=0; i<4; ++i)
+    ASSERT_EQ(c.attr[i],0, "0");
+  ASSERT_EQ(tostr(c), "0(3gov)", "Card 0 = 3 Green Open Ovals");
+
+  c = create_card(80);
+  for (SmaInt i=0; i<4; ++i)
+    ASSERT_EQ(c.attr[i],2, "2");
+  ASSERT_EQ(tostr(c), "80(2rsq)", "Card 80 = 2 Red Solid Squiggles");
+
+  card_type c1psv = create_card(1, PPL, SOL, OVL);
+  ASSERT_EQ(c1psv.attr[0], 1, "1");
+  ASSERT_EQ(c1psv.attr[1], 1, "1");
+  ASSERT_EQ(c1psv.attr[2], 2, "2");
+  ASSERT_EQ(c1psv.attr[3], 0, "0");
+  ASSERT_EQ(tostr(c1psv), "42(1psv)", "Card 42 = 1 Purple Solid oVal");
+  
+  // build all-different set with c1psv
+  card_type c2roc = create_card(2, RED, OPN, REC);
+  card_type c3gtq = create_card(3, GRN, STR, SQG);
+  ASSERT(is_a_set(c1psv, c2roc, c3gtq), "all-different attribute set");
+
+  // 3-different set with c1psv, all ovals
+  card_type c2rov = create_card(2, RED, OPN, OVL);
+  card_type c3gtv = create_card(3, GRN, STR, OVL);
+  ASSERT(is_a_set(c1psv, c2rov, c3gtv), "3-different attribute set");
+
+  // 2-different set with c1psv, all one solids
+  card_type c1rsq = create_card(1, RED, SOL, SQG);
+  card_type c1gsc = create_card(1, GRN, SOL, REC);
+  ASSERT(is_a_set(c1psv, c1rsq, c1gsc), "2-different attribute set");
+
+  // 1-different set with c1psv, all one purple oval
+  card_type c1pov = create_card(1, PPL, OPN, OVL);
+  card_type c1ptv = create_card(1, PPL, STR, OVL);
+  ASSERT(is_a_set(c1psv, c1pov, c1ptv), "1-different attribute set");
+  
+  // not a set
+  ASSERT(!is_a_set(c1psv, c2roc, c3gtv), "Not a set");
+  
+  
+  deal_type deal;
+  // Example from wiki page: the 72nd 5-combination is (8,6,3,1,0)
+  unrank_deal(72, 5, &deal.card[0]);
+  ASSERT_EQ(deal.card[0], 8, "8");
+  ASSERT_EQ(deal.card[1], 6, "6");
+  ASSERT_EQ(deal.card[2], 3, "3");
+  ASSERT_EQ(deal.card[3], 1, "1");
+  ASSERT_EQ(deal.card[4], 0, "0");
+
+  // set up the plane in Joy of Set fig 1.21
+  deal.card[0] = compute_number(1, GRN, STR, DMD);
+  deal.card[1] = compute_number(3, PPL, SOL, SQG);
+  deal.card[2] = compute_number(2, RED, STR, OVL);
+  deal.card[3] = compute_number(2, RED, OPN, OVL);
+  deal.card[4] = compute_number(3, PPL, STR, SQG);
+  deal.card[5] = compute_number(1, GRN, SOL, DMD);
+  deal.card[6] = compute_number(3, PPL, OPN, SQG);
+  deal.card[7] = compute_number(2, RED, SOL, OVL);
+  deal.card[8] = compute_number(1, GRN, OPN, DMD);
+  ASSERT   (has_a_set(deal,9),     "Plane has set(s)");
+  ASSERT_EQ(num_sets(&deal,9), 12, "Plane has 12 sets");
+
+  // set up the hyperplane in Joy of Set fig 5.25
+  card_type hp[27];
+  SmaInt i=0;
+  hp[i++]=create_card(3,GRN,SOL,OVL); hp[i++]=create_card(2,GRN,SOL,SQG); hp[i++]=create_card(1,GRN,SOL,DMD);
+  hp[i++]=create_card(2,PPL,OPN,OVL); hp[i++]=create_card(1,PPL,OPN,SQG); hp[i++]=create_card(3,PPL,OPN,DMD);
+  hp[i++]=create_card(1,RED,STR,OVL); hp[i++]=create_card(3,RED,STR,SQG); hp[i++]=create_card(2,RED,STR,DMD);
+
+  hp[i++]=create_card(1,PPL,STR,OVL); hp[i++]=create_card(3,PPL,STR,SQG); hp[i++]=create_card(2,PPL,STR,DMD);
+  hp[i++]=create_card(3,RED,SOL,OVL); hp[i++]=create_card(2,RED,SOL,SQG); hp[i++]=create_card(1,RED,SOL,DMD);
+  hp[i++]=create_card(2,GRN,OPN,OVL); hp[i++]=create_card(1,GRN,OPN,SQG); hp[i++]=create_card(3,GRN,OPN,DMD);
+
+  hp[i++]=create_card(2,RED,OPN,OVL); hp[i++]=create_card(1,RED,OPN,SQG); hp[i++]=create_card(3,RED,OPN,DMD);
+  hp[i++]=create_card(1,GRN,STR,OVL); hp[i++]=create_card(3,GRN,STR,SQG); hp[i++]=create_card(2,GRN,STR,DMD);
+  hp[i++]=create_card(3,PPL,SOL,OVL); hp[i++]=create_card(2,PPL,SOL,SQG); hp[i++]=create_card(1,PPL,SOL,DMD);
+  ASSERT_EQ(num_sets(hp,27), 117, "Hyperplane has 117 sets");
+  
+  // set up the maximal cap in Joy of Set fig 5.23
+  card_type mc[20];
+  i=0;
+  mc[i++]=create_card(2,GRN,SOL,SQG); mc[i++]=create_card(2,RED,STR,DMD); mc[i++]=create_card(3,RED,OPN,SQG);
+  mc[i++]=create_card(1,GRN,STR,DMD); mc[i++]=create_card(3,RED,SOL,SQG); mc[i++]=create_card(2,RED,STR,OVL);
+  mc[i++]=create_card(3,RED,STR,DMD); mc[i++]=create_card(1,GRN,SOL,SQG); mc[i++]=create_card(2,GRN,OPN,DMD);
+
+  mc[i++]=create_card(1,GRN,OPN,DMD); mc[i++]=create_card(1,RED,SOL,SQG); mc[i++]=create_card(3,GRN,STR,DMD);
+  mc[i++]=create_card(2,GRN,SOL,OVL); mc[i++]=create_card(2,GRN,OPN,SQG); mc[i++]=create_card(2,RED,OPN,DMD);
+  mc[i++]=create_card(2,RED,OPN,SQG); mc[i++]=create_card(3,PPL,OPN,SQG); mc[i++]=create_card(1,PPL,OPN,DMD);
+
+  mc[i++]=create_card(3,RED,SOL,DMD); mc[i++]=create_card(1,GRN,STR,SQG);
+  ASSERT(!has_a_set(mc,20), "Maximal cap has no set");
+  
+#if 0
+  SmaInt k=MAX_DEAL;
+  for (BigInt N=0; N<5; ++N) {
+    cout << k << "-combination " << N << ": ";
+    unrank_deal(N, k, &deal.card[0]);
+    for (SmaInt i=0; i<k; ++i) cout << deal.card[i] << ',';
+    cout << endl;
+  }
+
+  for (BigInt N=0; N<5; ++N) {
+    BigInt NN = CHOOSE[NUM_CARDS][k]-N-1;
+    cout << k << "-combination " << NN << ": ";
+    unrank_deal(NN, k, &deal.card[0]);
+    for (SmaInt i=0; i<k; ++i) cout << deal.card[i] << ',';
+    cout << endl;
+  }
+#endif
+
+  cout << "Self-tests passed" << endl;
+}
+
+
+
+////////////////////////////////////////////////////////
+
+
+// These are the two main versions of the function
 
 
 void enumerate_serial(SmaInt k,
@@ -213,8 +401,6 @@ void enumerate_serial(SmaInt k,
       }
    }
 }
-
-      
 
 
 void enumerate(SmaInt k,         // deal size
@@ -438,151 +624,6 @@ void enumerate(SmaInt k,         // deal size
 }
 
 
-#define ASSERT_EQ(a,b,m)	                \
-  if (a!=b) {                                   \
-    cerr << "ERROR (line " << __LINE__ << "): " \
-	 << a << "!=" << b << " " << m << endl;	\
-    exit(1);                                    \
-  }
-
-#define ASSERT(b,m)                             \
-  if (!b) {                                     \
-    cerr << "ERROR (line " << __LINE__ << "): " \
-	 << "false! " << m << endl;             \
-    exit(1);                                    \
-  }
-
-
-
-
-void self_test() {
-  ASSERT_EQ(combinations(81,12), 70724320184700, "C(81,12)");
-
-  for (SmaInt a=0; a<NUM_CARDS; ++a)
-  for (SmaInt b=0; b<NUM_CARDS; ++b)
-     ASSERT(is_a_set(a,b, THIRD[a][b]), "THIRD card verification");
-
-  deal_type recurse, serial;
-  unrank_deal       (12345678, 12, &(recurse.card[0])); // trusted
-  unrank_deal_serial(12345678, 12, &serial); // tested
-  for (int i=0; i<12; ++i)   // for all 12 cards
-        ASSERT_EQ(recurse.card[i],
-                   serial.card[i], "serial unranking matches recursive");
-  
-  card_type c = create_card(0);
-  for (SmaInt i=0; i<4; ++i)
-    ASSERT_EQ(c.attr[i],0, "0");
-  ASSERT_EQ(tostr(c), "0(3gov)", "Card 0 = 3 Green Open Ovals");
-
-  c = create_card(80);
-  for (SmaInt i=0; i<4; ++i)
-    ASSERT_EQ(c.attr[i],2, "2");
-  ASSERT_EQ(tostr(c), "80(2rsq)", "Card 80 = 2 Red Solid Squiggles");
-
-  card_type c1psv = create_card(1, PPL, SOL, OVL);
-  ASSERT_EQ(c1psv.attr[0], 1, "1");
-  ASSERT_EQ(c1psv.attr[1], 1, "1");
-  ASSERT_EQ(c1psv.attr[2], 2, "2");
-  ASSERT_EQ(c1psv.attr[3], 0, "0");
-  ASSERT_EQ(tostr(c1psv), "42(1psv)", "Card 42 = 1 Purple Solid oVal");
-  
-  // build all-different set with c1psv
-  card_type c2roc = create_card(2, RED, OPN, REC);
-  card_type c3gtq = create_card(3, GRN, STR, SQG);
-  ASSERT(is_a_set(c1psv, c2roc, c3gtq), "all-different attribute set");
-
-  // 3-different set with c1psv, all ovals
-  card_type c2rov = create_card(2, RED, OPN, OVL);
-  card_type c3gtv = create_card(3, GRN, STR, OVL);
-  ASSERT(is_a_set(c1psv, c2rov, c3gtv), "3-different attribute set");
-
-  // 2-different set with c1psv, all one solids
-  card_type c1rsq = create_card(1, RED, SOL, SQG);
-  card_type c1gsc = create_card(1, GRN, SOL, REC);
-  ASSERT(is_a_set(c1psv, c1rsq, c1gsc), "2-different attribute set");
-
-  // 1-different set with c1psv, all one purple oval
-  card_type c1pov = create_card(1, PPL, OPN, OVL);
-  card_type c1ptv = create_card(1, PPL, STR, OVL);
-  ASSERT(is_a_set(c1psv, c1pov, c1ptv), "1-different attribute set");
-  
-  // not a set
-  ASSERT(!is_a_set(c1psv, c2roc, c3gtv), "Not a set");
-  
-  
-  deal_type deal;
-  // Example from wiki page: the 72nd 5-combination is (8,6,3,1,0)
-  unrank_deal(72, 5, &deal.card[0]);
-  ASSERT_EQ(deal.card[0], 8, "8");
-  ASSERT_EQ(deal.card[1], 6, "6");
-  ASSERT_EQ(deal.card[2], 3, "3");
-  ASSERT_EQ(deal.card[3], 1, "1");
-  ASSERT_EQ(deal.card[4], 0, "0");
-
-  // set up the plane in Joy of Set fig 1.21
-  deal.card[0] = compute_number(1, GRN, STR, DMD);
-  deal.card[1] = compute_number(3, PPL, SOL, SQG);
-  deal.card[2] = compute_number(2, RED, STR, OVL);
-  deal.card[3] = compute_number(2, RED, OPN, OVL);
-  deal.card[4] = compute_number(3, PPL, STR, SQG);
-  deal.card[5] = compute_number(1, GRN, SOL, DMD);
-  deal.card[6] = compute_number(3, PPL, OPN, SQG);
-  deal.card[7] = compute_number(2, RED, SOL, OVL);
-  deal.card[8] = compute_number(1, GRN, OPN, DMD);
-  ASSERT   (has_a_set(deal,9),     "Plane has set(s)");
-  ASSERT_EQ(num_sets(&deal,9), 12, "Plane has 12 sets");
-
-  // set up the hyperplane in Joy of Set fig 5.25
-  card_type hp[27];
-  SmaInt i=0;
-  hp[i++]=create_card(3,GRN,SOL,OVL); hp[i++]=create_card(2,GRN,SOL,SQG); hp[i++]=create_card(1,GRN,SOL,DMD);
-  hp[i++]=create_card(2,PPL,OPN,OVL); hp[i++]=create_card(1,PPL,OPN,SQG); hp[i++]=create_card(3,PPL,OPN,DMD);
-  hp[i++]=create_card(1,RED,STR,OVL); hp[i++]=create_card(3,RED,STR,SQG); hp[i++]=create_card(2,RED,STR,DMD);
-
-  hp[i++]=create_card(1,PPL,STR,OVL); hp[i++]=create_card(3,PPL,STR,SQG); hp[i++]=create_card(2,PPL,STR,DMD);
-  hp[i++]=create_card(3,RED,SOL,OVL); hp[i++]=create_card(2,RED,SOL,SQG); hp[i++]=create_card(1,RED,SOL,DMD);
-  hp[i++]=create_card(2,GRN,OPN,OVL); hp[i++]=create_card(1,GRN,OPN,SQG); hp[i++]=create_card(3,GRN,OPN,DMD);
-
-  hp[i++]=create_card(2,RED,OPN,OVL); hp[i++]=create_card(1,RED,OPN,SQG); hp[i++]=create_card(3,RED,OPN,DMD);
-  hp[i++]=create_card(1,GRN,STR,OVL); hp[i++]=create_card(3,GRN,STR,SQG); hp[i++]=create_card(2,GRN,STR,DMD);
-  hp[i++]=create_card(3,PPL,SOL,OVL); hp[i++]=create_card(2,PPL,SOL,SQG); hp[i++]=create_card(1,PPL,SOL,DMD);
-  ASSERT_EQ(num_sets(hp,27), 117, "Hyperplane has 117 sets");
-  
-  // set up the maximal cap in Joy of Set fig 5.23
-  card_type mc[20];
-  i=0;
-  mc[i++]=create_card(2,GRN,SOL,SQG); mc[i++]=create_card(2,RED,STR,DMD); mc[i++]=create_card(3,RED,OPN,SQG);
-  mc[i++]=create_card(1,GRN,STR,DMD); mc[i++]=create_card(3,RED,SOL,SQG); mc[i++]=create_card(2,RED,STR,OVL);
-  mc[i++]=create_card(3,RED,STR,DMD); mc[i++]=create_card(1,GRN,SOL,SQG); mc[i++]=create_card(2,GRN,OPN,DMD);
-
-  mc[i++]=create_card(1,GRN,OPN,DMD); mc[i++]=create_card(1,RED,SOL,SQG); mc[i++]=create_card(3,GRN,STR,DMD);
-  mc[i++]=create_card(2,GRN,SOL,OVL); mc[i++]=create_card(2,GRN,OPN,SQG); mc[i++]=create_card(2,RED,OPN,DMD);
-  mc[i++]=create_card(2,RED,OPN,SQG); mc[i++]=create_card(3,PPL,OPN,SQG); mc[i++]=create_card(1,PPL,OPN,DMD);
-
-  mc[i++]=create_card(3,RED,SOL,DMD); mc[i++]=create_card(1,GRN,STR,SQG);
-  ASSERT(!has_a_set(mc,20), "Maximal cap has no set");
-  
-#if 0
-  SmaInt k=MAX_DEAL;
-  for (BigInt N=0; N<5; ++N) {
-    cout << k << "-combination " << N << ": ";
-    unrank_deal(N, k, &deal.card[0]);
-    for (SmaInt i=0; i<k; ++i) cout << deal.card[i] << ',';
-    cout << endl;
-  }
-
-  for (BigInt N=0; N<5; ++N) {
-    BigInt NN = CHOOSE[NUM_CARDS][k]-N-1;
-    cout << k << "-combination " << NN << ": ";
-    unrank_deal(NN, k, &deal.card[0]);
-    for (SmaInt i=0; i<k; ++i) cout << deal.card[i] << ',';
-    cout << endl;
-  }
-#endif
-
-  cout << "Self-tests passed" << endl;
-}
-
 int main(int argc, char**argv) {
    // precompute table of combinations up to C(81,12)
    for   (SmaInt n=0; n<=NUM_CARDS; ++n)
@@ -594,12 +635,14 @@ int main(int argc, char**argv) {
    for (SmaInt b=0; b<NUM_CARDS; ++b)
       THIRD[a][b] = compute_third(a,b);
 
-  if (1) 
-    self_test();
+   self_test(); // run these every time. exit(1) on any test failing
 
   std::vector<int> args;
   for (int i=1; i<argc; ++i)
      args.push_back(atoi(argv[i]));
+  if (args.empty())
+     return 0; // just the tests
+  
   SmaInt k = args.front();
   BigInt BATCHSIZE=1000, PARALLELS=0;
   if (argc > 2) BATCHSIZE = args.back();
