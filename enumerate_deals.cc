@@ -439,7 +439,13 @@ void enumerate(SmaInt k,         // deal size
    cout << "clCreateContext returns " << ret << endl;
    
    // Create a command queue
+#ifdef WINDOZE
+   // not sure why the version of OpenCL I have for windoze prefers the deprecated function
+   cl_command_queue command_queue = clCreateCommandQueue              (context, device_id, NULL, &ret);
+#else
+   // OpenCL for Linux compiles the old function but gives a warning
    cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, device_id, NULL, &ret);
+#endif
    cout << "clCreateCommandQueueWithProperties returns " << ret << endl;
 
    // Create memory buffers on the device for each vector 
