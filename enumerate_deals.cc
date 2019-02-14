@@ -364,6 +364,20 @@ void self_test() {
 ////////////////////////////////////////////////////////
 
 
+void print_projections(SmaInt k,
+                       double seconds)
+{
+   double per_s = CHOOSE[NUM_CARDS][k]  / seconds;
+   for (SmaInt kk=k+1; kk<=MAX_DEAL; ++kk) {
+      double  s = CHOOSE[NUM_CARDS][kk] / per_s;
+      cout << kk<<"-set estimate: "
+           << s << " seconds "
+           << s/3600 << " hours "
+           << s/3600/24 << " days" << endl;
+   }
+}
+
+
 // These are the two main versions of the function
 
 
@@ -379,7 +393,7 @@ void enumerate_serial(SmaInt k,
       TOTAL_COUNTS[i] = 0;
 
    deal_type d;
-   double t0 = clock();
+   double t0 = clock(), seconds;
    for (BigInt N=0; N<NUM_DEALS; ++N) {
       unrank_deal_serial(N, k, &d);
       SmaInt nSETs = num_sets(&d, k);
@@ -388,7 +402,7 @@ void enumerate_serial(SmaInt k,
       // intermittent reporting
       BigInt DONE=N+1;
       if (DONE==NUM_DEALS || (DONE%BATCHSIZE==0)) {
-         double seconds = (clock()-t0)/CLOCKS_PER_SEC;
+         seconds = (clock()-t0)/CLOCKS_PER_SEC;
          double frac = (DONE*1.0)/NUM_DEALS;
          if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<seconds;
          else                 cout << frac    <<k<<","<<DONE<<","<<seconds;
@@ -400,6 +414,8 @@ void enumerate_serial(SmaInt k,
          cout << endl;
       }
    }
+
+   print_projections(k, seconds);
 }
 
 
@@ -546,7 +562,7 @@ void enumerate(SmaInt k,         // deal size
 
    //NUM_DEALS = 100000000; // only for test-running the first 'few'
 
-   double t0 = clock();
+   double t0 = clock(), seconds;
    while (OFF < NUM_DEALS) {
       // OFF is number processed so far,
 
@@ -603,7 +619,7 @@ void enumerate(SmaInt k,         // deal size
       // if OFF==NUM_DEALS this is the last time through the while loop
       
       // intermittent reporting
-      double seconds = (clock()-t0)/CLOCKS_PER_SEC;
+      seconds = (clock()-t0)/CLOCKS_PER_SEC;
       double frac = (OFF*1.0)/NUM_DEALS;
       if (OFF==NUM_DEALS) cout << "FINAL,"<<k<<","<<OFF<<","<<seconds;
       else                cout << frac    <<k<<","<<OFF<<","<<seconds;
@@ -627,6 +643,8 @@ void enumerate(SmaInt k,         // deal size
 
    delete[] DEALI_VEC;
    delete[] PARALLEL_COUNTS;
+
+   print_projections(k, seconds);
 }
 
 
