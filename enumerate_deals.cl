@@ -12,21 +12,16 @@ typedef cl_ulong BigInt; // cl_ulong is unsigned __int64 in cl_platform.h
 // but short prints as an int, so that's easier
 typedef cl_ushort SmaInt;
 
-#if DEVICE_CODE
-#define DUAL_CONST __constant const
-#else
-#define DUAL_CONST            const
-#endif
-
-DUAL_CONST SmaInt NUM_CARDS=81; // 3^4 for 4 attributes of 3 values
-DUAL_CONST SmaInt MAX_DEAL=12;  // if technology permits this might be increased
-DUAL_CONST SmaInt NUM_COUNTS=23; // internet sez max SETs in 12 cards is 22
+#define NUM_CARDS  81 // 3^4 for 4 attributes of 3 values
+#define MAX_DEAL   12 // if technology permits this might be increased
+#define NUM_COUNTS 23 // internet sez max SETs in 12 cards is 22
 
 #if DEVICE_CODE
 //SNIP
 #else
 SmaInt DEAL_SIZE;
 BigInt CHOOSE[NUM_CARDS+1][MAX_DEAL+1]; // C(0,0) up to C(81,12)
+BigInt  THIRD[NUM_CARDS][NUM_CARDS];    // the third card that makes a set with two
 #endif
 
 
@@ -38,9 +33,11 @@ BigInt CHOOSE[NUM_CARDS+1][MAX_DEAL+1]; // C(0,0) up to C(81,12)
 // avoid dynamic stl containers for performance
 typedef struct card_type_s { SmaInt attr[4]; } card_type;
 
+typedef SmaInt card_num; // 0...80
+
 // a deal is an array of card numbers 0...80, and also a corresponding
 // array of card_type structs
-typedef struct deal_type_s { card_type card[MAX_DEAL]; } deal_type;
+typedef struct deal_type_s { card_num card[MAX_DEAL]; } deal_type;
 
 // for card number n=0..80, use modular arithmetic to create a card
 // with 4 attribtes valued 0,1,2
@@ -65,11 +62,11 @@ void unrank_deal_serial(BigInt origN, SmaInt origk,
          ++n;
       // now n>CHOOSE[n][k], so back up 1
       --n;
-      deal->card[origk-k] = create_card(n);
+      deal->card[origk-k] = n;
       N -= CHOOSE[n][k];
    }
    // now k==1, put the result in the last card of the deal
-   deal->card[origk-1] = create_card(N);
+   deal->card[origk-1] = N;
 }
 
 
@@ -91,6 +88,14 @@ bool is_a_set(const card_type* a,
   return true;
 }
 
+// this function is even more important, much faster than above
+bool is_a_set(const card_num a,
+              const card_num b,
+              const card_num c)
+{
+   return (c==THIRD[a][b]);
+}
+
 
 // This has to iterate through all triples every time
 SmaInt num_sets(const card_type* cards, SmaInt kay) {
@@ -100,6 +105,18 @@ SmaInt num_sets(const card_type* cards, SmaInt kay) {
   for (SmaInt k=j+1; k<kay; ++k)
     if (is_a_set(cards+i, cards+j, cards+k)) 
        ++count;
+  return count;
+}
+
+// This has to iterate through all triples every time
+SmaInt num_sets(const deal_type* d, SmaInt kay) {
+  SmaInt count=0;
+  for (SmaInt i=0;   i<kay; ++i)
+  for (SmaInt j=i+1; j<kay; ++j)
+  for (SmaInt k=j+1; k<kay; ++k) {
+    if (is_a_set(d->card[i], d->card[j], d->card[k])) 
+       ++count;
+  }
   return count;
 }
 
@@ -131,7 +148,7 @@ __kernel void num_sets_kernel(
    
    for (BigInt N=NBEG; N<NEND; ++N) {
       unrank_deal_serial(N, k, &d);
-      SmaInt nSETs = num_sets(&d.card[0], DEAL_SIZE);
+      SmaInt nSETs = num_sets(&d, DEAL_SIZE);
       COUNTS[OFF+nSETs]++;
    }
 }

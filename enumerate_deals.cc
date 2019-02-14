@@ -2,6 +2,7 @@
 #include <time.h>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 // from Intel:
 // intel_sdk_for_opencl_2017_7.0.0.2568_x64.tgz
@@ -14,6 +15,7 @@ using std::endl;
 using std::string;
 using std::ostream;
 using std::ostringstream;
+using std::vector;
 
 #define DEVICE_CODE 0
 #define   HOST_CODE 1
@@ -33,7 +35,6 @@ BigInt combinations(SmaInt n, SmaInt k) {
   return C;
 }
 
-
 card_type
 create_card(SmaInt number,
             SmaInt color,
@@ -41,9 +42,9 @@ create_card(SmaInt number,
             SmaInt shape)
 {
   return create_card(27*(number%3) +
-                       9*color      +
-                       3*texture    +
-                       shape);
+                      9*color      +
+                      3*texture    +
+                        shape);
 }
 
 SmaInt
@@ -53,6 +54,31 @@ compute_number(const card_type& c) {
          c.attr[2]*3  +
          c.attr[3];
 }
+
+SmaInt
+compute_number(SmaInt number,
+               SmaInt color,
+               SmaInt texture,
+               SmaInt shape) {
+   return (27 * (number%3) +
+            9 * color      +
+            3 * texture    +
+           shape);
+}
+
+card_num compute_third(const card_num anum,
+                       const card_num bnum)
+{
+   card_type a = create_card(anum);
+   card_type b = create_card(bnum);
+   card_type c;
+   for (SmaInt i=0; i<4; ++i) {
+      SmaInt complement = (a.attr[i]+b.attr[i]) % 3;
+      c.attr[i] = (3 - complement) % 3;
+   }
+   return compute_number(c);
+}
+
 
 
 
@@ -102,10 +128,10 @@ ostream& operator<<(ostream& ostr, const card_type& c) {
 // See https://en.wikipedia.org/wiki/Combinatorial_number_system
 // original flavor (recursive)
 void unrank_deal(BigInt N, SmaInt k,
-                 card_type* card_ptr)
+                 card_num* card_ptr)
 {
   if (k==1) {
-    *card_ptr = create_card(N);
+    *card_ptr = N;
     // cout << "N " << N << " k " << k << " card " << *deal << endl;
     return;
   }
@@ -115,7 +141,7 @@ void unrank_deal(BigInt N, SmaInt k,
     ++n;
   // now n>CHOOSE[n][k], so back up 1
   --n;
-  *card_ptr = create_card(n);
+  *card_ptr = n;
   // cout << "N " << N << " k " << k << " card " << *deal << endl;
 
   // unrank smaller combination starting with next pointer
@@ -133,22 +159,62 @@ bool has_a_set(const card_type* cards, SmaInt kay) {
   for (SmaInt j=i+1; j<kay; ++j)
   for (SmaInt k=j+1; k<kay; ++k)
     if (is_a_set(cards[i],
-		 cards[j],
-		 cards[k]))
+                 cards[j],
+                 cards[k]))
       return true;
 
   // if it makes it all the way through the triple loop, then no sets
   return false;
 }
 
-inline bool has_a_set(const deal_type& deal, SmaInt k) 
-  { return has_a_set(&(deal.card[0]), k); }
+// shortcuts a true after a first set is found
+bool has_a_set(const deal_type& d, SmaInt kay) {
+  for (SmaInt i=0;   i<kay; ++i)
+  for (SmaInt j=i+1; j<kay; ++j)
+  for (SmaInt k=j+1; k<kay; ++k)
+    if (is_a_set(d.card[i], d.card[j], d.card[k]))
+      return true;
+  // if it makes it all the way through the triple loop, then no sets
+  return false;
+}
 
 
+void enumerate_serial(SmaInt k,
+                      BigInt BATCHSIZE)
+{
+   DEAL_SIZE=k;
+   BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
+   cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
 
-inline SmaInt num_sets(const deal_type& deal, SmaInt k) 
-  { return num_sets(&(deal.card[0]), k); }
+   BigInt TOTAL_COUNTS[NUM_COUNTS];
+   for (SmaInt i=0;  i<NUM_COUNTS;  ++i)
+      TOTAL_COUNTS[i] = 0;
 
+   deal_type d;
+   double t0 = clock();
+   for (BigInt N=0; N<NUM_DEALS; ++N) {
+      unrank_deal_serial(N, k, &d);
+      SmaInt nSETs = num_sets(&d, k);
+      TOTAL_COUNTS[nSETs]++;
+
+      // intermittent reporting
+      BigInt DONE=N+1;
+      if (DONE==NUM_DEALS || (DONE%BATCHSIZE==0)) {
+         double seconds = (clock()-t0)/CLOCKS_PER_SEC;
+         double frac = (DONE*1.0)/NUM_DEALS;
+         if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<seconds;
+         else                 cout << frac    <<k<<","<<DONE<<","<<seconds;
+         for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+            cout << ",";
+            if (TOTAL_COUNTS[i])
+               cout << TOTAL_COUNTS[i];
+         }
+         cout << endl;
+      }
+   }
+}
+
+      
 
 
 void enumerate(SmaInt k,         // deal size
@@ -238,6 +304,16 @@ void enumerate(SmaInt k,         // deal size
    }
    ostr << "};\n\n";
 
+   ostr << "__constant const SmaInt THIRD[" << NUM_CARDS << "]["
+        << NUM_CARDS << "] = {\n";
+   for (int a=0; a<NUM_CARDS; ++a) {
+      ostr << "   {" << THIRD[a][0];
+      for (int b=1; b<NUM_CARDS; ++b)
+         ostr << ", " << THIRD[a][b];
+      ostr << (a < NUM_CARDS-1 ? "},\n" : "}\n");
+   }
+   ostr << "};\n\n";
+
    ostr << source_str.substr(pos);
 
    source_str = ostr.str();
@@ -261,6 +337,8 @@ void enumerate(SmaInt k,         // deal size
    ret = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG,
                                sizeof(log), log, &logsize);
    cout << "Build log:\n" << log << endl;
+   if (ret != CL_SUCCESS)
+      return;
 
    // Create the OpenCL kernel
    cl_kernel kernel = clCreateKernel(program, "num_sets_kernel", &ret);
@@ -276,7 +354,7 @@ void enumerate(SmaInt k,         // deal size
 
    //NUM_DEALS = 100000000; // only for test-running the first 'few'
 
-   clock_t t0 = clock();
+   double t0 = clock();
    while (OFF < NUM_DEALS) {
       // OFF is number processed so far,
 
@@ -317,20 +395,6 @@ void enumerate(SmaInt k,         // deal size
       if (ret!=CL_SUCCESS)
          cout << "clClEnqueueReadBuffer returns " << ret << endl;
 
-
-#if 0
-      // Overwrite with serially-computed values
-      for (BigInt I=0; I<PARALLELS; ++I) {
-         for (SmaInt j=0; j<NUM_COUNTS; ++j)
-            PARALLEL_COUNTS[I*NUM_COUNTS + j] = 0;
-         
-         num_sets_kernel(I,
-                         DEALI_VEC,
-                         PARALLEL_COUNTS);
-      }
-#endif
-
-      
       // tabulate this batch of ansas
       for (SmaInt j=0; j<NUM_COUNTS; ++j) {
          TOTAL_COUNTS[j] = 0; // reset to 0, PARALLEL_COUNTS are cumulative
@@ -347,8 +411,7 @@ void enumerate(SmaInt k,         // deal size
       // if OFF==NUM_DEALS this is the last time through the while loop
       
       // intermittent reporting
-      clock_t dt = clock() - t0;
-      double seconds = (dt*1.0)/CLOCKS_PER_SEC;
+      double seconds = (clock()-t0)/CLOCKS_PER_SEC;
       double frac = (OFF*1.0)/NUM_DEALS;
       if (OFF==NUM_DEALS) cout << "FINAL,"<<k<<","<<OFF<<","<<seconds;
       else                cout << frac    <<k<<","<<OFF<<","<<seconds;
@@ -395,13 +458,16 @@ void enumerate(SmaInt k,         // deal size
 void self_test() {
   ASSERT_EQ(combinations(81,12), 70724320184700, "C(81,12)");
 
+  for (SmaInt a=0; a<NUM_CARDS; ++a)
+  for (SmaInt b=0; b<NUM_CARDS; ++b)
+     ASSERT(is_a_set(a,b, THIRD[a][b]), "THIRD card verification");
+
   deal_type recurse, serial;
   unrank_deal       (12345678, 12, &(recurse.card[0])); // trusted
   unrank_deal_serial(12345678, 12, &serial); // tested
   for (int i=0; i<12; ++i)   // for all 12 cards
-     for (int j=0; j<4; ++j) // for all 4 attributes
-        ASSERT_EQ(recurse.card[i].attr[j],
-                   serial.card[i].attr[j], "serial unranking matches recursive");
+        ASSERT_EQ(recurse.card[i],
+                   serial.card[i], "serial unranking matches recursive");
   
   card_type c = create_card(0);
   for (SmaInt i=0; i<4; ++i)
@@ -443,29 +509,28 @@ void self_test() {
   // not a set
   ASSERT(!is_a_set(c1psv, c2roc, c3gtv), "Not a set");
   
-
+  
   deal_type deal;
-  // the 72nd 5-combination is (8,6,3,1,0)
+  // Example from wiki page: the 72nd 5-combination is (8,6,3,1,0)
   unrank_deal(72, 5, &deal.card[0]);
-  ASSERT_EQ(compute_number(deal.card[0]), 8, "8");
-  ASSERT_EQ(compute_number(deal.card[1]), 6, "6");
-  ASSERT_EQ(compute_number(deal.card[2]), 3, "3");
-  ASSERT_EQ(compute_number(deal.card[3]), 1, "1");
-  ASSERT_EQ(compute_number(deal.card[4]), 0, "0");
-
+  ASSERT_EQ(deal.card[0], 8, "8");
+  ASSERT_EQ(deal.card[1], 6, "6");
+  ASSERT_EQ(deal.card[2], 3, "3");
+  ASSERT_EQ(deal.card[3], 1, "1");
+  ASSERT_EQ(deal.card[4], 0, "0");
 
   // set up the plane in Joy of Set fig 1.21
-  deal.card[0] = create_card(1, GRN, STR, DMD);
-  deal.card[1] = create_card(3, PPL, SOL, SQG);
-  deal.card[2] = create_card(2, RED, STR, OVL);
-  deal.card[3] = create_card(2, RED, OPN, OVL);
-  deal.card[4] = create_card(3, PPL, STR, SQG);
-  deal.card[5] = create_card(1, GRN, SOL, DMD);
-  deal.card[6] = create_card(3, PPL, OPN, SQG);
-  deal.card[7] = create_card(2, RED, SOL, OVL);
-  deal.card[8] = create_card(1, GRN, OPN, DMD);
-  ASSERT  (has_a_set(deal,9),     "Plane has set(s)");
-  ASSERT_EQ(num_sets(deal,9), 12, "Plane has 12 sets");
+  deal.card[0] = compute_number(1, GRN, STR, DMD);
+  deal.card[1] = compute_number(3, PPL, SOL, SQG);
+  deal.card[2] = compute_number(2, RED, STR, OVL);
+  deal.card[3] = compute_number(2, RED, OPN, OVL);
+  deal.card[4] = compute_number(3, PPL, STR, SQG);
+  deal.card[5] = compute_number(1, GRN, SOL, DMD);
+  deal.card[6] = compute_number(3, PPL, OPN, SQG);
+  deal.card[7] = compute_number(2, RED, SOL, OVL);
+  deal.card[8] = compute_number(1, GRN, OPN, DMD);
+  ASSERT   (has_a_set(deal,9),     "Plane has set(s)");
+  ASSERT_EQ(num_sets(&deal,9), 12, "Plane has 12 sets");
 
   // set up the hyperplane in Joy of Set fig 5.25
   card_type hp[27];
@@ -482,7 +547,7 @@ void self_test() {
   hp[i++]=create_card(1,GRN,STR,OVL); hp[i++]=create_card(3,GRN,STR,SQG); hp[i++]=create_card(2,GRN,STR,DMD);
   hp[i++]=create_card(3,PPL,SOL,OVL); hp[i++]=create_card(2,PPL,SOL,SQG); hp[i++]=create_card(1,PPL,SOL,DMD);
   ASSERT_EQ(num_sets(hp,27), 117, "Hyperplane has 117 sets");
-
+  
   // set up the maximal cap in Joy of Set fig 5.23
   card_type mc[20];
   i=0;
@@ -496,8 +561,6 @@ void self_test() {
 
   mc[i++]=create_card(3,RED,SOL,DMD); mc[i++]=create_card(1,GRN,STR,SQG);
   ASSERT(!has_a_set(mc,20), "Maximal cap has no set");
-  
-
   
 #if 0
   SmaInt k=MAX_DEAL;
@@ -526,13 +589,24 @@ int main(int argc, char**argv) {
       for (SmaInt k=0; k<=MAX_DEAL;  ++k)
          CHOOSE[n][k] = combinations(n,k);
 
+   // precompute all the third cards for every pair that make SETs
+   for (SmaInt a=0; a<NUM_CARDS; ++a)
+   for (SmaInt b=0; b<NUM_CARDS; ++b)
+      THIRD[a][b] = compute_third(a,b);
+
   if (1) 
     self_test();
 
-  if (argc>=4) {
-     SmaInt k         = atoi(argv[1]);
-     BigInt PARALLELS = atoi(argv[2]);
-     BigInt BATCHSIZE = atoi(argv[3]);
+  std::vector<int> args;
+  for (int i=1; i<argc; ++i)
+     args.push_back(atoi(argv[i]));
+  SmaInt k = args.front();
+  BigInt BATCHSIZE=1000, PARALLELS=0;
+  if (argc > 2) BATCHSIZE = args.back();
+  if (argc > 3) {
+     PARALLELS = args[1];
      enumerate(k, PARALLELS, BATCHSIZE);
+  } else {
+     enumerate_serial(k, BATCHSIZE);
   }
 }
