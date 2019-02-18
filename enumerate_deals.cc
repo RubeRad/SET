@@ -653,25 +653,33 @@ void enumerate(SmaInt k,         // deal size
       DEALI_VEC[PARALLELS] = DONE+NUM;
       //cout << "task " << PARALLELS-1 << " ends with " << DEALI_VEC[PARALLELS] << endl;
       
+      cl_event write_event, kernel_event, read_event;
       // copy DEALI_VEC into device buffer
       ret = clEnqueueWriteBuffer(command_queue, inn_obj, CL_TRUE, 0,
-              (PARALLELS+1) * sizeof(BigInt), DEALI_VEC, 0, NULL, NULL);;
+                                 (PARALLELS+1) * sizeof(BigInt), DEALI_VEC,
+                                 0, NULL, &write_event);
       if (ret!=CL_SUCCESS)
          cout << "clClEnqueueWriteBuffer returns " << ret << endl;
 
       // Execute kernels
       size_t global_item_size=PARALLELS, local_item_size = PARALLELS;
       ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
-            &global_item_size, &local_item_size, 0, NULL, NULL);
+                                   &global_item_size, &local_item_size,
+                                   1, &write_event, // wait for writing
+                                   &kernel_event);  // before starting execution
       if (ret!=CL_SUCCESS)
          cout << "clEnqueueNDRangeKernel returns " << ret << endl;
 
       // copy answers from device buffer
       ret = clEnqueueReadBuffer(command_queue, out_obj, CL_TRUE, 0, 
-                (PARALLELS*NUM_COUNTS) * sizeof(BigInt), PARALLEL_COUNTS, 0, NULL, NULL);
+                (PARALLELS*NUM_COUNTS) * sizeof(BigInt), PARALLEL_COUNTS,
+                                1, &kernel_event, // wait for execution
+                                &read_event);     // before reading
       if (ret!=CL_SUCCESS)
          cout << "clClEnqueueReadBuffer returns " << ret << endl;
-
+      clWaitForEvents(1, &read_event); // wait for reading device-->host to finish
+                                       // before trying to read ansas on the host
+      
       // tabulate this batch of ansas
       for (SmaInt j=0; j<NUM_COUNTS; ++j) {
          TOTAL_COUNTS[j] = 0; // reset to 0, PARALLEL_COUNTS are cumulative

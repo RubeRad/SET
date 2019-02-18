@@ -85,8 +85,7 @@ SmaInt num_sets(const deal_type* d, SmaInt kay) {
   for (SmaInt i=0;   i<kay; ++i)
   for (SmaInt j=i+1; j<kay; ++j)
   for (SmaInt k=j+1; k<kay; ++k)
-    if (d->card[k] == THIRD[d->card[i]][d->card[j]])
-       ++count;
+     count += (d->card[k] == THIRD[d->card[i]][d->card[j]]);
   return count;
 }
 
