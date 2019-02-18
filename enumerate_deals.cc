@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <vector>
 
@@ -14,6 +15,8 @@ using std::cerr;
 using std::endl;
 using std::string;
 using std::ostream;
+using std::ifstream;
+using std::ofstream;
 using std::ostringstream;
 using std::vector;
 
@@ -378,6 +381,60 @@ void print_projections(SmaInt k,
 }
 
 
+void restore_state(SmaInt k,
+                   BigInt& N,
+                   double& s,
+                   BigInt* COUNTS)
+{
+   ostringstream fname;
+   fname << k << ".csv";
+   ifstream csv(fname.str());
+   string line;
+   getline(csv, line);
+   while (line.length()) {
+      size_t pos = line.find(",");
+      N = atoi(line.substr(0,pos).c_str());
+      if (N==0) {
+         for (int i=0; i<NUM_COUNTS; ++i)
+            COUNTS[i] = 0;
+         return;
+      }
+
+      line = line.substr(pos+1);
+      pos = line.find(",");
+      s = atof(line.substr(0,pos).c_str());
+      
+      line = line.substr(pos+1);
+      int i=0;
+      while ((pos=line.find(",")) != std::string::npos) {
+         COUNTS[i++] = atoi(line.substr(0,pos).c_str());
+         if (i>=NUM_COUNTS)
+            break;
+         line = line.substr(pos+1);
+      }
+
+      getline(csv, line);
+   }
+}
+
+void dump_state(SmaInt k,
+                BigInt N,
+                double s,
+                BigInt* COUNTS,
+                bool overwrite=false)
+{
+   ostringstream fname;
+   fname << k << ".csv";
+   ofstream csv(fname.str(), (overwrite ? std::ios_base::out
+                                        : std::ios_base::app));
+   csv << N << "," << s;
+   for (auto i=0; i<NUM_COUNTS; ++i)
+      csv << "," << COUNTS[i];
+   csv << endl;
+   csv.close();
+}
+
+
 // These are the two main versions of the function
 
 
@@ -392,9 +449,13 @@ void enumerate_serial(SmaInt k,
    for (SmaInt i=0;  i<NUM_COUNTS;  ++i)
       TOTAL_COUNTS[i] = 0;
 
+   BigInt N0=0;
+   double seconds0;
+   restore_state(k, N0, seconds0, TOTAL_COUNTS);
+
    deal_type d;
    double t0 = clock(), seconds;
-   for (BigInt N=0; N<NUM_DEALS; ++N) {
+   for (BigInt N=N0; N<NUM_DEALS; ++N) {
       unrank_deal_serial(N, k, &d);
       SmaInt nSETs = num_sets(&d, k);
       TOTAL_COUNTS[nSETs]++;
@@ -402,7 +463,7 @@ void enumerate_serial(SmaInt k,
       // intermittent reporting
       BigInt DONE=N+1;
       if (DONE==NUM_DEALS || (DONE%BATCHSIZE==0)) {
-         seconds = (clock()-t0)/CLOCKS_PER_SEC;
+         seconds = seconds0 + (clock()-t0)/CLOCKS_PER_SEC;
          double frac = (DONE*1.0)/NUM_DEALS;
          if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<seconds;
          else                 cout << frac    <<k<<","<<DONE<<","<<seconds;
@@ -412,6 +473,7 @@ void enumerate_serial(SmaInt k,
                cout << TOTAL_COUNTS[i];
          }
          cout << endl;
+         dump_state(k, DONE, seconds, TOTAL_COUNTS);
       }
    }
 
@@ -437,6 +499,15 @@ void enumerate(SmaInt k,         // deal size
       for (BigInt J=0; J<PARALLELS; ++J)
          PARALLEL_COUNTS[J*NUM_COUNTS + i] = 0;
    }
+
+   BigInt N0=0;
+   double seconds0;
+   restore_state(k, N0, seconds0, TOTAL_COUNTS);
+
+   // Put any previous counts also into the parallel-count accumulator
+   // (just put them all in the 1st one, it doesn't matter)
+   for (SmaInt i=0; i<NUM_COUNTS; ++i)
+      PARALLEL_COUNTS[i] = TOTAL_COUNTS[i];
 
    // Get platform and device information
    cl_platform_id platform_id = NULL;
@@ -558,17 +629,15 @@ void enumerate(SmaInt k,         // deal size
    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&out_obj);
    cout << "clSetKernelArg(out) returns " << ret << endl;
    
-   BigInt OFF=0;
-
+   BigInt DONE=N0; // DONE is number processed so far,
    //NUM_DEALS = 100000000; // only for test-running the first 'few'
 
    double t0 = clock(), seconds;
-   while (OFF < NUM_DEALS) {
-      // OFF is number processed so far,
+   while (DONE < NUM_DEALS) {
 
       BigInt NUM = PARALLELS*BATCHSIZE; // how many to do in a full loop
-      if (OFF+NUM > NUM_DEALS)          // last one may not be full
-         NUM = NUM_DEALS-OFF;
+      if (DONE+NUM > NUM_DEALS)          // last one may not be full
+         NUM = NUM_DEALS-DONE;
       // NUM is how many to process this loop
 
       BigInt PER = NUM / PARALLELS;
@@ -578,10 +647,10 @@ void enumerate(SmaInt k,         // deal size
       // Populate vector of deal numbers to process
       // task i will work on DEALI_VEC[i]<=j<DEALI_VEC[i+1]
       for (BigInt I=0; I<PARALLELS; ++I) {
-         DEALI_VEC[I] = OFF + I*PER;
+         DEALI_VEC[I] = DONE + I*PER;
          //cout << "task " << I << " starts with " << DEALI_VEC[I] << endl;
       }
-      DEALI_VEC[PARALLELS] = OFF+NUM;
+      DEALI_VEC[PARALLELS] = DONE+NUM;
       //cout << "task " << PARALLELS-1 << " ends with " << DEALI_VEC[PARALLELS] << endl;
       
       // copy DEALI_VEC into device buffer
@@ -613,16 +682,16 @@ void enumerate(SmaInt k,         // deal size
       }
             
 
-      // Now that we are done with this batch, roll NUM into OFF
-      OFF += NUM;
-      // Once again OFF is the number of deals processed so far
-      // if OFF==NUM_DEALS this is the last time through the while loop
+      // Now that we are done with this batch, roll NUM into DONE
+      DONE += NUM;
+      // Once again DONE is the number of deals processed so far
+      // if DONE==NUM_DEALS this is the last time through the while loop
       
       // intermittent reporting
-      seconds = (clock()-t0)/CLOCKS_PER_SEC;
-      double frac = (OFF*1.0)/NUM_DEALS;
-      if (OFF==NUM_DEALS) cout << "FINAL,"<<k<<","<<OFF<<","<<seconds;
-      else                cout << frac    <<k<<","<<OFF<<","<<seconds;
+      seconds = seconds0 + (clock()-t0)/CLOCKS_PER_SEC;
+      double frac = (DONE*1.0)/NUM_DEALS;
+      if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<seconds;
+      else                 cout << frac    <<k<<","<<DONE<<","<<seconds;
       for (SmaInt i=0; i<NUM_COUNTS; ++i) {
          cout << ",";
          if (TOTAL_COUNTS[i])
@@ -630,9 +699,11 @@ void enumerate(SmaInt k,         // deal size
       }
       cout << endl;
 
+      dump_state(k, DONE, seconds, TOTAL_COUNTS);
+
       // BigInt TOTAL=0; // should add up to NUM_DEALS when we're done
       // for (SmaInt i=0; i<NUM_COUNTS; ++i) {
-      //    double frac = (TOTAL_COUNTS[i]*1.0)/OFF;
+      //    double frac = (TOTAL_COUNTS[i]*1.0)/DONE;
       //    cout << i << " sets: " << counts_dev[i] << " " << frac << endl;
       //    TOTAL += counts_dev[i];
       // }
