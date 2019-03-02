@@ -5,6 +5,8 @@
 #include <sstream>
 #include <vector>
 
+#include <pthread.h>
+
 // from Intel:
 // intel_sdk_for_opencl_2017_7.0.0.2568_x64.tgz
 // opencl_runtime_16.1.2_x64_rh_6.4.0.37.tgz
@@ -17,6 +19,7 @@ using std::string;
 using std::ostream;
 using std::ifstream;
 using std::ofstream;
+using std::istringstream;
 using std::ostringstream;
 using std::vector;
 
@@ -384,10 +387,12 @@ void print_projections(SmaInt k,
 void restore_state(SmaInt k,
                    BigInt& N,
                    double& s,
-                   BigInt* COUNTS)
+                   BigInt* COUNTS,
+                   const string& fname_input="")
 {
    ostringstream fname;
-   fname << k << ".csv";
+   if (fname_input.length()) fname << fname_input;
+   else                      fname << k << ".csv";
    ifstream csv(fname.str());
    string line;
    getline(csv, line);
@@ -421,12 +426,13 @@ void dump_state(SmaInt k,
                 BigInt N,
                 double s,
                 BigInt* COUNTS,
-                bool overwrite=false)
+                const string& input_fname="")
+
 {
    ostringstream fname;
-   fname << k << ".csv";
-   ofstream csv(fname.str(), (overwrite ? std::ios_base::out
-                                        : std::ios_base::app));
+   if (input_fname.length()) fname << input_fname;
+   else                      fname << k << ".csv";
+   ofstream csv(fname.str(), std::ios_base::app);
    csv << N << "," << s;
    for (auto i=0; i<NUM_COUNTS; ++i)
       csv << "," << COUNTS[i];
@@ -439,7 +445,9 @@ void dump_state(SmaInt k,
 
 
 void enumerate_serial(SmaInt k,
-                      BigInt BATCHSIZE)
+                      BigInt BATCHSIZE,
+                      BigInt START=0,
+                      const string& fname="")
 {
    DEAL_SIZE=k;
    BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
@@ -451,7 +459,7 @@ void enumerate_serial(SmaInt k,
 
    BigInt N0=0;
    double seconds0;
-   restore_state(k, N0, seconds0, TOTAL_COUNTS);
+   restore_state(k, N0, seconds0, TOTAL_COUNTS, fname);
 
    deal_type d;
    double t0 = clock(), seconds;
@@ -481,9 +489,9 @@ void enumerate_serial(SmaInt k,
 }
 
 
-void enumerate(SmaInt k,         // deal size
-               BigInt PARALLELS, // number of parallel units to task
-               BigInt BATCHSIZE) // number of deals per task
+void enumerate_opencl(SmaInt k,         // deal size
+                      BigInt PARALLELS, // number of parallel units to task
+                      BigInt BATCHSIZE) // number of deals per task
 {
    DEAL_SIZE=k;
    BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
@@ -727,6 +735,13 @@ void enumerate(SmaInt k,         // deal size
 }
 
 
+void enumerate_thread(SmaInt k,         // deal size
+                      BigInt PARALLELS, // number of parallel units to task
+                      BigInt BATCHSIZE) // number of deals per task
+{
+   return;
+}
+
 int main(int argc, char**argv) {
    // precompute table of combinations up to C(81,12)
    for   (SmaInt n=0; n<=NUM_CARDS; ++n)
@@ -739,20 +754,32 @@ int main(int argc, char**argv) {
       THIRD[a][b] = compute_third(a,b);
 
    self_test(); // run these every time. exit(1) on any test failing
+   if (argc < 3) // just the tests
+      return 0;
+   
 
-  std::vector<int> args;
-  for (int i=1; i<argc; ++i)
-     args.push_back(atoi(argv[i]));
-  if (args.empty())
-     return 0; // just the tests
-  
-  SmaInt k = args.front();
-  BigInt BATCHSIZE=1000, PARALLELS=0;
-  if (argc > 2) BATCHSIZE = args.back();
-  if (argc > 3) {
-     PARALLELS = args[1];
-     enumerate(k, PARALLELS, BATCHSIZE);
-  } else {
-     enumerate_serial(k, BATCHSIZE);
-  }
+   int argi=1;
+   SmaInt k;
+   BigInt BATCHSIZE=1000, PARALLELS=1;
+   bool opencl = false;
+   while (argi<argc-1) {
+      string key     (argv[argi++]);
+      BigInt val(atoi(argv[argi++]));
+      if      (key == "CARDS")     k = val;
+      else if (key == "BATCHSIZE") BATCHSIZE = val;
+      else if (key == "PARALLELS") PARALLELS = val;
+      else if (key == "OPENCL")    opencl = val; // 0 or 1
+      else {
+         cerr << "Unknown keyword " << key << endl;
+         exit(1);
+      }
+   }
+
+   if (opencl) {
+      enumerate_opencl(k, PARALLELS, BATCHSIZE);
+   } else if (PARALLELS>1) {
+      enumerate_thread(k, PARALLELS, BATCHSIZE);
+   } else {
+      enumerate_serial(k,            BATCHSIZE);
+   }
 }
