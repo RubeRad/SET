@@ -4,6 +4,9 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#ifndef WINDOZE
+#include <unistd.h> // for sleep(seconds)
+#endif
 
 #include <pthread.h>
 
@@ -735,10 +738,122 @@ void enumerate_opencl(SmaInt k,         // deal size
 }
 
 
+#define MAX_THREADS 8
+SmaInt THREAD_CRDS = 3; // enumerate_thread will set this
+BigInt THREAD_BEGS[MAX_THREADS+1];
+BigInt THREAD_CNTS[MAX_THREADS][NUM_COUNTS];
+
+
+void *enumerate_1thread(void *t) {
+   long my_id = (long)t;
+
+   deal_type d;
+   BigInt N0 = THREAD_BEGS[my_id];
+   BigInt NN = THREAD_BEGS[my_id+1];
+   //printf("my_id = %ld N0 = %ld NN = %ld\n", my_id, N0, NN);
+   for (BigInt N=N0; N<NN; ++N) {
+      unrank_deal_serial(N, THREAD_CRDS, &d);
+      SmaInt nSETs = num_sets(&d, THREAD_CRDS);
+      //printf("my_id = %ld nSETs = %d\n", my_id, nSETs);
+      THREAD_CNTS[my_id][nSETs]++;
+   }
+   pthread_exit(NULL);
+}
+   
+
+
 void enumerate_thread(SmaInt k,         // deal size
                       BigInt PARALLELS, // number of parallel units to task
                       BigInt BATCHSIZE) // number of deals per task
 {
+   if (PARALLELS > MAX_THREADS) {
+      cerr << "MAX_THREADS = " << MAX_THREADS << endl;
+      exit(1);
+   }
+
+   THREAD_CRDS = k;
+   BigInt TOTAL_COUNTS[NUM_COUNTS];
+   for (SmaInt i=0;  i<NUM_COUNTS;  ++i)
+      TOTAL_COUNTS[i] = 0;
+
+   BigInt N0=0;
+   double seconds0, seconds, t0=clock();
+   restore_state(k, N0, seconds0, TOTAL_COUNTS);
+   for (int j=0; j<NUM_COUNTS; ++j)
+      THREAD_CNTS[0][j] = TOTAL_COUNTS[j];
+   deal_type d;
+
+   pthread_t threads[MAX_THREADS];
+   long    thread_is[MAX_THREADS];
+   pthread_attr_t attr;
+   pthread_attr_init(&attr);
+   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+   BigInt DONE=N0, NUM_DEALS=CHOOSE[NUM_CARDS][k];
+   while (DONE < NUM_DEALS) {
+      BigInt LEFT = NUM_DEALS - DONE;
+      BigInt BATCH_TOTAL = PARALLELS * BATCHSIZE;
+      BigInt PER_BATCH;
+      if (LEFT >= BATCH_TOTAL) {
+         PER_BATCH = BATCHSIZE;
+      } else {
+         BATCH_TOTAL = LEFT;
+         PER_BATCH   = LEFT / PARALLELS + 1; // integer division
+      }
+      //cout << "PER_BATCH " << PER_BATCH << endl;
+
+      for (long i=0; i<=PARALLELS; ++i) 
+          THREAD_BEGS[i]         = DONE + i*PER_BATCH;
+      if (THREAD_BEGS[PARALLELS] > NUM_DEALS)
+          THREAD_BEGS[PARALLELS] = NUM_DEALS;
+
+      // for (long i=0; i<PARALLELS; ++i)
+      //    cout << "BATCH " << i << ": " << THREAD_BEGS[i] << "-->" << THREAD_BEGS[i+1] << endl;
+
+      for (long i=0; i<PARALLELS; ++i) {
+         thread_is[i] = i;
+         pthread_create(&threads[i], &attr, enumerate_1thread, (void *)thread_is[i]);
+         //cout << "Created thread " << i << endl;
+      }
+
+      for (long i=0; i<PARALLELS; ++i) {
+         pthread_join(threads[i], NULL);
+         //cout << "Joined thread " << i << endl;
+      }
+
+
+      // tabulate this batch of ansas
+      for (SmaInt j=0; j<NUM_COUNTS; ++j) {
+         TOTAL_COUNTS[j] = 0; // reset to 0, THREAD_COUNTS are cumulative
+         for (long i=0; i<PARALLELS; ++i) {
+            TOTAL_COUNTS[j] += THREAD_CNTS[i][j];
+            //cout << I << " " << j << " " << THREAD_COUNTS[I*NUM_COUNTS + j] << endl;
+         }
+      }
+
+      // Now that we are done with this batch, roll NUM into DONE
+      DONE += BATCH_TOTAL;
+      // Once again DONE is the number of deals processed so far
+      // if DONE==NUM_DEALS this is the last time through the while loop
+      
+      // intermittent reporting
+      seconds = seconds0 + (clock()-t0)/CLOCKS_PER_SEC;
+      double frac = (DONE*1.0)/NUM_DEALS;
+      if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<seconds;
+      else                 cout << frac    <<k<<","<<DONE<<","<<seconds;
+      for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+         cout << ",";
+         if (TOTAL_COUNTS[i])
+            cout << TOTAL_COUNTS[i];
+      }
+      cout << endl;
+
+      dump_state(k, DONE, seconds, TOTAL_COUNTS);
+   }
+   
+
+
+   
    return;
 }
 

@@ -8,7 +8,7 @@ all: enumerate_deals
 
 
 enumerate_deals: enumerate_deals.cc enumerate_deals.cl
-	$(CXX) $(CXXFLAGS) -o enumerate_deals enumerate_deals.cc -lOpenCL
+	$(CXX) $(CXXFLAGS) -o enumerate_deals enumerate_deals.cc -lOpenCL -lpthread
 
 cltest: cltest.cc
 	$(CXX) $(CXXFLAGS) -o cltest $^ -lOpenCL
