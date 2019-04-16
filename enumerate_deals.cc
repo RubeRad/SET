@@ -659,6 +659,8 @@ void enumerate_opencl(SmaInt k,         // deal size
       // task i will work on DEALI_VEC[i]<=j<DEALI_VEC[i+1]
       for (BigInt I=0; I<PARALLELS; ++I) {
          DEALI_VEC[I] = DONE + I*PER;
+         if (DEALI_VEC[I] > DONE+NUM) // don't let last batches overflow
+             DEALI_VEC[I] = DONE+NUM;
          //cout << "task " << I << " starts with " << DEALI_VEC[I] << endl;
       }
       DEALI_VEC[PARALLELS] = DONE+NUM;
