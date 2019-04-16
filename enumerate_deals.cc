@@ -673,9 +673,9 @@ void enumerate_opencl(SmaInt k,         // deal size
          cout << "clClEnqueueWriteBuffer returns " << ret << endl;
 
       // Execute kernels
-      size_t global_item_size=PARALLELS, local_item_size = PARALLELS;
+      size_t global_item_size=PARALLELS;//, local_item_size = PARALLELS;
       ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
-                                   &global_item_size, &local_item_size,
+                                   &global_item_size, NULL, // &local_item_size
                                    1, &write_event, // wait for writing
                                    &kernel_event);  // before starting execution
       if (ret!=CL_SUCCESS)

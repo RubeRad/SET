@@ -97,7 +97,6 @@ void num_sets_kernel(
    const BigInt* DEALI,
    BigInt* COUNTS)
 {
-
 #else
 
 // The real OpenCL kernel
@@ -106,20 +105,28 @@ __kernel void num_sets_kernel(
    __global       BigInt* COUNTS) // output, organized as 23 per kernel
 {
    int taski=get_global_id(0);
-
 #endif
+   BigInt local_counts[NUM_COUNTS];
+   for (SmaInt i=0; i< NUM_COUNTS; ++i)
+      local_counts[i]=0;
 
    BigInt NBEG = DEALI[taski];
    BigInt NEND = DEALI[taski+1];
    SmaInt k = DEAL_SIZE;
    deal_type d;
-   BigInt OFF = taski*NUM_COUNTS;
    
    for (BigInt N=NBEG; N<NEND; ++N) {
       unrank_deal_serial(N, k, &d);
       SmaInt nSETs = num_sets(&d, DEAL_SIZE);
-      COUNTS[OFF+nSETs]++;
+      local_counts[nSETs]++;
    }
+
+   // After this work item has counted up all its work,
+   // write to global memory
+   BigInt OFF = taski*NUM_COUNTS;
+   for (SmaInt i=0; i<NUM_COUNTS; ++i)
+      COUNTS[OFF + i] += local_counts[i];
+   
 }
 
 
