@@ -494,7 +494,8 @@ void enumerate_serial(SmaInt k,
 
 void enumerate_opencl(SmaInt k,         // deal size
                       BigInt PARALLELS, // number of parallel units to task
-                      BigInt BATCHSIZE) // number of deals per task
+                      BigInt BATCHSIZE, // number of deals per task
+		      double MAX_SECONDS)
 {
    DEAL_SIZE=k;
    BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
@@ -643,7 +644,7 @@ void enumerate_opencl(SmaInt k,         // deal size
    BigInt DONE=N0; // DONE is number processed so far,
    //NUM_DEALS = 100000000; // only for test-running the first 'few'
 
-   double t0 = clock(), seconds;
+   double t0 = clock(), tot_seconds;
    while (DONE < NUM_DEALS) {
 
       BigInt NUM = PARALLELS*BATCHSIZE; // how many to do in a full loop
@@ -709,10 +710,11 @@ void enumerate_opencl(SmaInt k,         // deal size
       // if DONE==NUM_DEALS this is the last time through the while loop
       
       // intermittent reporting
-      seconds = seconds0 + (clock()-t0)/CLOCKS_PER_SEC;
+      double new_seconds = (clock()-t0)/CLOCKS_PER_SEC;
+      tot_seconds = seconds0 + new_seconds;
       double frac = (DONE*1.0)/NUM_DEALS;
-      if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<seconds;
-      else                 cout << frac    <<k<<","<<DONE<<","<<seconds;
+      if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<tot_seconds;
+      else                 cout << frac    <<k<<","<<DONE<<","<<tot_seconds;
       for (SmaInt i=0; i<NUM_COUNTS; ++i) {
          cout << ",";
          if (TOTAL_COUNTS[i])
@@ -720,7 +722,7 @@ void enumerate_opencl(SmaInt k,         // deal size
       }
       cout << endl;
 
-      dump_state(k, DONE, seconds, TOTAL_COUNTS);
+      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
 
       // BigInt TOTAL=0; // should add up to NUM_DEALS when we're done
       // for (SmaInt i=0; i<NUM_COUNTS; ++i) {
@@ -730,13 +732,16 @@ void enumerate_opencl(SmaInt k,         // deal size
       // }
       
       //cout << "Total: " << TOTAL << " " << (TOTAL*1.0)/NUM_DEALS << endl << endl;
+
+      if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS)
+	break;
       
    } // loop through all batches
 
    delete[] DEALI_VEC;
    delete[] PARALLEL_COUNTS;
 
-   print_projections(k, seconds);
+   print_projections(k, tot_seconds);
 }
 
 
@@ -878,6 +883,7 @@ int main(int argc, char**argv) {
    int argi=1;
    SmaInt k;
    BigInt BATCHSIZE=1000, PARALLELS=1;
+   double MAX_SECONDS=0;
    bool opencl = false;
    while (argi<argc-1) {
       string key     (argv[argi++]);
@@ -886,6 +892,8 @@ int main(int argc, char**argv) {
       else if (key == "BATCHSIZE") BATCHSIZE = val;
       else if (key == "PARALLELS") PARALLELS = val;
       else if (key == "OPENCL")    opencl = val; // 0 or 1
+      else if (key == "MAX_HOURS")   MAX_SECONDS += val*3600;
+      else if (key == "MAX_SECONDS") MAX_SECONDS += val;
       else {
          cerr << "Unknown keyword " << key << endl;
          exit(1);
@@ -893,7 +901,7 @@ int main(int argc, char**argv) {
    }
 
    if (opencl) {
-      enumerate_opencl(k, PARALLELS, BATCHSIZE);
+      enumerate_opencl(k, PARALLELS, BATCHSIZE, MAX_SECONDS);
    } else if (PARALLELS>1) {
       enumerate_thread(k, PARALLELS, BATCHSIZE);
    } else {
