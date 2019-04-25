@@ -8,6 +8,7 @@
 #include <unistd.h> // for sleep(seconds)
 #endif
 
+#define HAVE_STRUCT_TIMESPEC 1
 #include <pthread.h>
 
 // from Intel:
@@ -500,6 +501,7 @@ void enumerate_opencl(SmaInt k,         // deal size
    DEAL_SIZE=k;
    BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
    cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
+   cout << "MAX_SECONDS for this run is " << MAX_SECONDS << endl;
 
    // starting/ending deal numbers for each unit
    BigInt* DEALI_VEC = new BigInt[PARALLELS+1];
@@ -611,7 +613,7 @@ void enumerate_opencl(SmaInt k,         // deal size
    source_size = source_str.length();
    const char* source_ptr = source_str.c_str();
 
-   cout << "Full source\n\n" << source_str << "\n\n";
+   //cout << "Full source\n\n" << source_str << "\n\n";
    
    // Create and build the program
    cl_program program = clCreateProgramWithSource(context, 1, 
@@ -765,6 +767,7 @@ void *enumerate_1thread(void *t) {
       THREAD_CNTS[my_id][nSETs]++;
    }
    pthread_exit(NULL);
+   return 0;
 }
    
 
