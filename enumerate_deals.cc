@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 #ifndef WINDOZE
 #include <unistd.h> // for sleep(seconds)
 #endif
@@ -401,26 +402,20 @@ void restore_state(SmaInt k,
    string line;
    getline(csv, line);
    while (line.length()) {
-      size_t pos = line.find(",");
-      N = atoi(line.substr(0,pos).c_str());
+      std::replace(line.begin(), line.end(), ',', ' ');
+      istringstream istr(line);
+
+      istr >> N;
       if (N==0) {
          for (int i=0; i<NUM_COUNTS; ++i)
             COUNTS[i] = 0;
          return;
       }
 
-      line = line.substr(pos+1);
-      pos = line.find(",");
-      s = atof(line.substr(0,pos).c_str());
-      
-      line = line.substr(pos+1);
-      int i=0;
-      while ((pos=line.find(",")) != std::string::npos) {
-         COUNTS[i++] = atoi(line.substr(0,pos).c_str());
-         if (i>=NUM_COUNTS)
-            break;
-         line = line.substr(pos+1);
-      }
+      istr >> s;
+
+      for (int i=0; i<NUM_COUNTS; ++i)
+	istr >> COUNTS[i];
 
       getline(csv, line);
    }
