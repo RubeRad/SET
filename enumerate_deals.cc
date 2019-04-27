@@ -730,12 +730,25 @@ void enumerate_opencl(SmaInt k,         // deal size
       
       //cout << "Total: " << TOTAL << " " << (TOTAL*1.0)/NUM_DEALS << endl << endl;
 
-      if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS)
+      if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS) {
+	// quitting early because of requested time limit
+	// print estimate of remaining time
+	double rate = DONE/tot_seconds;
+	BigInt rem_deals = NUM_DEALS - DONE;
+	double rem_sec = rem_deals / rate;
+	double rem_hrs = rem_sec / 3600;
+	double rem_dys = rem_hrs / 24;
+	cout << DONE << " / " << tot_seconds << " = " << rate << "/sec"
+	     << "\nEst remaining:"
+	     << "\n  seconds: " << rem_sec
+	     << "\n  hours:   " << rem_hrs
+	     << "\n  days:    " << rem_dys << endl;
 	break;
+      }
       
    } // loop through all batches
 
-   delete[] DEALI_VEC;
+   delete[] DEALI_VEC; 
    delete[] PARALLEL_COUNTS;
 
    print_projections(k, tot_seconds);
@@ -769,7 +782,8 @@ void *enumerate_1thread(void *t) {
 
 void enumerate_thread(SmaInt k,         // deal size
                       BigInt PARALLELS, // number of parallel units to task
-                      BigInt BATCHSIZE) // number of deals per task
+                      BigInt BATCHSIZE, // number of deals per task
+		      BigInt MAX_SECONDS)
 {
    if (PARALLELS > MAX_THREADS) {
       cerr << "MAX_THREADS = " << MAX_THREADS << endl;
@@ -781,8 +795,10 @@ void enumerate_thread(SmaInt k,         // deal size
    for (SmaInt i=0;  i<NUM_COUNTS;  ++i)
       TOTAL_COUNTS[i] = 0;
 
+   cout << "MAX_SECONDS for this run is " << MAX_SECONDS << endl;
+
    BigInt N0=0;
-   double seconds0, seconds, t0=clock();
+   double seconds0, t0=clock();
    restore_state(k, N0, seconds0, TOTAL_COUNTS);
    for (int j=0; j<NUM_COUNTS; ++j)
       THREAD_CNTS[0][j] = TOTAL_COUNTS[j];
@@ -842,10 +858,11 @@ void enumerate_thread(SmaInt k,         // deal size
       // if DONE==NUM_DEALS this is the last time through the while loop
       
       // intermittent reporting
-      seconds = seconds0 + (clock()-t0)/CLOCKS_PER_SEC;
+      double new_seconds = (clock()-t0)/CLOCKS_PER_SEC;
+      double tot_seconds = seconds0 + new_seconds;
       double frac = (DONE*1.0)/NUM_DEALS;
-      if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<seconds;
-      else                 cout << frac    <<k<<","<<DONE<<","<<seconds;
+      if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<tot_seconds;
+      else                 cout << frac    <<k<<","<<DONE<<","<<tot_seconds;
       for (SmaInt i=0; i<NUM_COUNTS; ++i) {
          cout << ",";
          if (TOTAL_COUNTS[i])
@@ -853,11 +870,24 @@ void enumerate_thread(SmaInt k,         // deal size
       }
       cout << endl;
 
-      dump_state(k, DONE, seconds, TOTAL_COUNTS);
+      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
+
+      if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS) {
+	// quitting early because of requested time limit
+	// print estimate of remaining time
+	double rate = DONE/tot_seconds;
+	BigInt rem_deals = NUM_DEALS - DONE;
+	double rem_sec = rem_deals / rate;
+	double rem_hrs = rem_sec / 3600;
+	double rem_dys = rem_hrs / 24;
+	cout << DONE << " / " << tot_seconds << " = " << rate << "/sec"
+	     << "\nEst remaining:"
+	     << "\n  seconds: " << rem_sec
+	     << "\n  hours:   " << rem_hrs
+	     << "\n  days:    " << rem_dys << endl;
+	break;
+      }
    }
-   
-
-
    
    return;
 }
@@ -901,7 +931,7 @@ int main(int argc, char**argv) {
    if (opencl) {
       enumerate_opencl(k, PARALLELS, BATCHSIZE, MAX_SECONDS);
    } else if (PARALLELS>1) {
-      enumerate_thread(k, PARALLELS, BATCHSIZE);
+      enumerate_thread(k, PARALLELS, BATCHSIZE, MAX_SECONDS);
    } else {
       enumerate_serial(k,            BATCHSIZE);
    }
