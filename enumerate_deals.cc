@@ -53,17 +53,17 @@ create_card(SmaInt number,
             SmaInt shape)
 {
   return create_card(27*(number%3) +
-                      9*color      +
-                      3*texture    +
-                        shape);
+                     9*color      +
+                     3*texture    +
+                     shape);
 }
 
 SmaInt
 compute_number(const card_type& c) {
   return c.attr[0]*27 +
-         c.attr[1]*9  +
-         c.attr[2]*3  +
-         c.attr[3];
+    c.attr[1]*9  +
+    c.attr[2]*3  +
+    c.attr[3];
 }
 
 SmaInt
@@ -71,23 +71,23 @@ compute_number(SmaInt number,
                SmaInt color,
                SmaInt texture,
                SmaInt shape) {
-   return (27 * (number%3) +
-            9 * color      +
-            3 * texture    +
-           shape);
+  return (27 * (number%3) +
+          9 * color      +
+          3 * texture    +
+          shape);
 }
 
 card_num compute_third(const card_num anum,
                        const card_num bnum)
 {
-   card_type a = create_card(anum);
-   card_type b = create_card(bnum);
-   card_type c;
-   for (SmaInt i=0; i<4; ++i) {
-      SmaInt complement = (a.attr[i]+b.attr[i]) % 3;
-      c.attr[i] = (3 - complement) % 3;
-   }
-   return compute_number(c);
+  card_type a = create_card(anum);
+  card_type b = create_card(bnum);
+  card_type c;
+  for (SmaInt i=0; i<4; ++i) {
+    SmaInt complement = (a.attr[i]+b.attr[i]) % 3;
+    c.attr[i] = (3 - complement) % 3;
+  }
+  return compute_number(c);
 }
 
 
@@ -110,19 +110,19 @@ string tostr(const card_type& c) {
   ostr << compute_number(c) << "("
        << (c.attr[0] ? c.attr[0] : 3);  // 1 or 2 as-is, 0=3(mod 3)
   switch (c.attr[1]) { case GRN: ostr << 'g'; break;
-                       case PPL: ostr << 'p'; break;  
-                       case RED: ostr << 'r'; break;
-                        default: DIE("Unknown color");
+  case PPL: ostr << 'p'; break;  
+  case RED: ostr << 'r'; break;
+  default: DIE("Unknown color");
   }
   switch (c.attr[2]) { case OPN: ostr << 'o'; break;  
-                       case STR: ostr << 't'; break;
-                       case SOL: ostr << 's'; break;  
-                        default: DIE("Unknown color");
+  case STR: ostr << 't'; break;
+  case SOL: ostr << 's'; break;  
+  default: DIE("Unknown color");
   }
   switch (c.attr[3]) { case OVL: ostr << 'v'; break;  
-                       case REC: ostr << 'c'; break;  
-                       case SQG: ostr << 'q'; break;  
-                        default: DIE("Unknown shape");
+  case REC: ostr << 'c'; break;  
+  case SQG: ostr << 'q'; break;  
+  default: DIE("Unknown shape");
   }
   ostr << ")";
   return ostr.str();
@@ -182,7 +182,7 @@ bool is_a_set(const card_type* a,
 inline bool is_a_set(const card_type& a,
                      const card_type& b,
                      const card_type& c)
-  { return is_a_set(&a, &b, &c); } 
+{ return is_a_set(&a, &b, &c); } 
 
 
 
@@ -190,10 +190,10 @@ inline bool is_a_set(const card_type& a,
 SmaInt num_sets(const card_type* cards, SmaInt kay) {
   SmaInt count=0;
   for (SmaInt i=0;   i<kay; ++i)
-  for (SmaInt j=i+1; j<kay; ++j)
-  for (SmaInt k=j+1; k<kay; ++k)
-    if (is_a_set(cards+i, cards+j, cards+k)) 
-       ++count;
+    for (SmaInt j=i+1; j<kay; ++j)
+      for (SmaInt k=j+1; k<kay; ++k)
+        if (is_a_set(cards+i, cards+j, cards+k)) 
+          ++count;
   return count;
 }
 
@@ -201,12 +201,12 @@ SmaInt num_sets(const card_type* cards, SmaInt kay) {
 // shortcuts a true after a first set is found
 bool has_a_set(const card_type* cards, SmaInt kay) {
   for (SmaInt i=0;   i<kay; ++i)
-  for (SmaInt j=i+1; j<kay; ++j)
-  for (SmaInt k=j+1; k<kay; ++k)
-    if (is_a_set(cards[i],
-                 cards[j],
-                 cards[k]))
-      return true;
+    for (SmaInt j=i+1; j<kay; ++j)
+      for (SmaInt k=j+1; k<kay; ++k)
+        if (is_a_set(cards[i],
+                     cards[j],
+                     cards[k]))
+          return true;
 
   // if it makes it all the way through the triple loop, then no sets
   return false;
@@ -215,10 +215,10 @@ bool has_a_set(const card_type* cards, SmaInt kay) {
 // shortcuts a true after a first set is found
 bool has_a_set(const deal_type& d, SmaInt kay) {
   for (SmaInt i=0;   i<kay; ++i)
-  for (SmaInt j=i+1; j<kay; ++j)
-  for (SmaInt k=j+1; k<kay; ++k)
-    if (is_a_set(d.card[i], d.card[j], d.card[k]))
-      return true;
+    for (SmaInt j=i+1; j<kay; ++j)
+      for (SmaInt k=j+1; k<kay; ++k)
+        if (is_a_set(d.card[i], d.card[j], d.card[k]))
+          return true;
   // if it makes it all the way through the triple loop, then no sets
   return false;
 }
@@ -228,17 +228,17 @@ bool has_a_set(const deal_type& d, SmaInt kay) {
 
 ////////////////////////////////////////////////////////////////////////
 // Unit tests. They're fast enough, might as well run them every time
-#define ASSERT_EQ(a,b,m)	                \
+#define ASSERT_EQ(a,b,m)                        \
   if (a!=b) {                                   \
     cerr << "ERROR (line " << __LINE__ << "): " \
-	 << a << "!=" << b << " " << m << endl;	\
+         << a << "!=" << b << " " << m << endl; \
     exit(1);                                    \
   }
 
 #define ASSERT(b,m)                             \
   if (!b) {                                     \
     cerr << "ERROR (line " << __LINE__ << "): " \
-	 << "false! " << m << endl;             \
+         << "false! " << m << endl;             \
     exit(1);                                    \
   }
 
@@ -246,15 +246,15 @@ void self_test() {
   ASSERT_EQ(combinations(81,12), 70724320184700, "C(81,12)");
 
   for (SmaInt a=0; a<NUM_CARDS; ++a)
-  for (SmaInt b=0; b<NUM_CARDS; ++b)
-     ASSERT(is_a_set(a,b, THIRD[a][b]), "THIRD card verification");
+    for (SmaInt b=0; b<NUM_CARDS; ++b)
+      ASSERT(is_a_set(a,b, THIRD[a][b]), "THIRD card verification");
 
   deal_type recurse, serial;
   unrank_deal       (12345678, 12, &(recurse.card[0])); // trusted
   unrank_deal_serial(12345678, 12, &serial); // tested
   for (int i=0; i<12; ++i)   // for all 12 cards
-        ASSERT_EQ(recurse.card[i],
-                   serial.card[i], "serial unranking matches recursive");
+    ASSERT_EQ(recurse.card[i],
+              serial.card[i], "serial unranking matches recursive");
   
   card_type c = create_card(0);
   for (SmaInt i=0; i<4; ++i)
@@ -377,8 +377,8 @@ void self_test() {
 
 void print_projections(SmaInt k,
                        double seconds,
-		       BigInt DONE=0,
-		       double MAX_SECONDS=0)
+                       BigInt DONE=0,
+                       double MAX_SECONDS=0)
 {
   BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
   if (DONE!=0 && MAX_SECONDS != 0.0) {
@@ -391,8 +391,10 @@ void print_projections(SmaInt k,
     double rem_dys = rem_hrs / 24;
     auto sav = cout.precision();
     cout.precision(3);
-    cout << "Done: " << DONE << "/" << NUM_DEALS << " (" <<  DONE*100.0/NUM_DEALS << "%)\n"
-         << "Time: " << seconds << "s (" << seconds/3600 << "h)\n"
+    cout << "Done: " << DONE << "/" << NUM_DEALS << " ("
+                     <<  DONE*100.0/NUM_DEALS << "%)\n"
+         << "Time: " << seconds << "s ("
+                     << seconds/3600 << "h)\n"
          << "Rate: " << rate/1e6 << "M/s\n"
          << "Left: " << rem_sec << "s ("
                      << rem_hrs << "h) ("
@@ -418,30 +420,30 @@ void restore_state(SmaInt k,
                    BigInt* COUNTS,
                    const string& fname_input="")
 {
-   ostringstream fname;
-   if (fname_input.length()) fname << fname_input;
-   else                      fname << k << ".csv";
-   ifstream csv(fname.str());
-   string line;
-   getline(csv, line);
-   while (line.length()) {
-      std::replace(line.begin(), line.end(), ',', ' ');
-      istringstream istr(line);
+  ostringstream fname;
+  if (fname_input.length()) fname << fname_input;
+  else                      fname << k << ".csv";
+  ifstream csv(fname.str());
+  string line;
+  getline(csv, line);
+  while (line.length()) {
+    std::replace(line.begin(), line.end(), ',', ' ');
+    istringstream istr(line);
 
-      istr >> N;
-      if (N==0) {
-         for (int i=0; i<NUM_COUNTS; ++i)
-            COUNTS[i] = 0;
-         return;
-      }
-
-      istr >> s;
-
+    istr >> N;
+    if (N==0) {
       for (int i=0; i<NUM_COUNTS; ++i)
-	istr >> COUNTS[i];
+        COUNTS[i] = 0;
+      return;
+    }
 
-      getline(csv, line);
-   }
+    istr >> s;
+
+    for (int i=0; i<NUM_COUNTS; ++i)
+      istr >> COUNTS[i];
+
+    getline(csv, line);
+  }
 }
 
 void dump_state(SmaInt k,
@@ -451,15 +453,15 @@ void dump_state(SmaInt k,
                 const string& input_fname="")
 
 {
-   ostringstream fname;
-   if (input_fname.length()) fname << input_fname;
-   else                      fname << k << ".csv";
-   ofstream csv(fname.str(), std::ios_base::app);
-   csv << N << "," << s;
-   for (auto i=0; i<NUM_COUNTS; ++i)
-      csv << "," << COUNTS[i];
-   csv << endl;
-   csv.close();
+  ostringstream fname;
+  if (input_fname.length()) fname << input_fname;
+  else                      fname << k << ".csv";
+  ofstream csv(fname.str(), std::ios_base::app);
+  csv << N << "," << s;
+  for (auto i=0; i<NUM_COUNTS; ++i)
+    csv << "," << COUNTS[i];
+  csv << endl;
+  csv.close();
 }
 
 
@@ -471,299 +473,299 @@ void enumerate_serial(SmaInt k,
                       BigInt START=0,
                       const string& fname="")
 {
-   DEAL_SIZE=k;
-   BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
-   cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
+  DEAL_SIZE=k;
+  BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
+  cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
 
-   BigInt TOTAL_COUNTS[NUM_COUNTS];
-   for (SmaInt i=0;  i<NUM_COUNTS;  ++i)
-      TOTAL_COUNTS[i] = 0;
+  BigInt TOTAL_COUNTS[NUM_COUNTS];
+  for (SmaInt i=0;  i<NUM_COUNTS;  ++i)
+    TOTAL_COUNTS[i] = 0;
 
-   BigInt N0=0;
-   double seconds0;
-   restore_state(k, N0, seconds0, TOTAL_COUNTS, fname);
+  BigInt N0=0;
+  double seconds0;
+  restore_state(k, N0, seconds0, TOTAL_COUNTS, fname);
 
-   deal_type d;
-   double t0 = clock(), seconds;
-   for (BigInt N=N0; N<NUM_DEALS; ++N) {
-      unrank_deal_serial(N, k, &d);
-      SmaInt nSETs = num_sets(&d, k);
-      TOTAL_COUNTS[nSETs]++;
+  deal_type d;
+  double t0 = clock(), seconds;
+  for (BigInt N=N0; N<NUM_DEALS; ++N) {
+    unrank_deal_serial(N, k, &d);
+    SmaInt nSETs = num_sets(&d, k);
+    TOTAL_COUNTS[nSETs]++;
 
-      // intermittent reporting
-      BigInt DONE=N+1;
-      if (DONE==NUM_DEALS || (DONE%BATCHSIZE==0)) {
-         seconds = seconds0 + (clock()-t0)/CLOCKS_PER_SEC;
-         double frac = (DONE*1.0)/NUM_DEALS;
-         if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<seconds;
-         else                 cout << frac    <<k<<","<<DONE<<","<<seconds;
-         for (SmaInt i=0; i<NUM_COUNTS; ++i) {
-            cout << ",";
-            if (TOTAL_COUNTS[i])
-               cout << TOTAL_COUNTS[i];
-         }
-         cout << endl;
-         dump_state(k, DONE, seconds, TOTAL_COUNTS);
+    // intermittent reporting
+    BigInt DONE=N+1;
+    if (DONE==NUM_DEALS || (DONE%BATCHSIZE==0)) {
+      seconds = seconds0 + (clock()-t0)/CLOCKS_PER_SEC;
+      double frac = (DONE*1.0)/NUM_DEALS;
+      if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<seconds;
+      else                 cout << frac    <<k<<","<<DONE<<","<<seconds;
+      for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+        cout << ",";
+        if (TOTAL_COUNTS[i])
+          cout << TOTAL_COUNTS[i];
       }
-   }
+      cout << endl;
+      dump_state(k, DONE, seconds, TOTAL_COUNTS);
+    }
+  }
 
-   print_projections(k, seconds);
+  print_projections(k, seconds);
 }
 
 
 void enumerate_opencl(SmaInt k,         // deal size
                       BigInt PARALLELS, // number of parallel units to task
                       BigInt BATCHSIZE, // number of deals per task
-		      double MAX_SECONDS)
+                      double MAX_SECONDS)
 {
-   DEAL_SIZE=k;
-   BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
-   cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
-   cout << "MAX_SECONDS for this run is " << MAX_SECONDS << endl;
+  DEAL_SIZE=k;
+  BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
+  cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
+  cout << "MAX_SECONDS for this run is " << MAX_SECONDS << endl;
 
-   // starting/ending deal numbers for each unit
-   BigInt* DEALI_VEC = new BigInt[PARALLELS+1];
-   // kernel results; NUM_COUNTS per 
-   BigInt* PARALLEL_COUNTS = new BigInt[PARALLELS*NUM_COUNTS];
-   BigInt TOTAL_COUNTS[NUM_COUNTS];
-   for (SmaInt i=0;  i<NUM_COUNTS;  ++i) {
-      TOTAL_COUNTS[i] = 0;
-      for (BigInt J=0; J<PARALLELS; ++J)
-         PARALLEL_COUNTS[J*NUM_COUNTS + i] = 0;
-   }
+  // starting/ending deal numbers for each unit
+  BigInt* DEALI_VEC = new BigInt[PARALLELS+1];
+  // kernel results; NUM_COUNTS per 
+  BigInt* PARALLEL_COUNTS = new BigInt[PARALLELS*NUM_COUNTS];
+  BigInt TOTAL_COUNTS[NUM_COUNTS];
+  for (SmaInt i=0;  i<NUM_COUNTS;  ++i) {
+    TOTAL_COUNTS[i] = 0;
+    for (BigInt J=0; J<PARALLELS; ++J)
+      PARALLEL_COUNTS[J*NUM_COUNTS + i] = 0;
+  }
 
-   BigInt N0=0;
-   double seconds0;
-   restore_state(k, N0, seconds0, TOTAL_COUNTS);
+  BigInt N0=0;
+  double seconds0;
+  restore_state(k, N0, seconds0, TOTAL_COUNTS);
 
-   // Put any previous counts also into the parallel-count accumulator
-   // (just put them all in the 1st one, it doesn't matter)
-   for (SmaInt i=0; i<NUM_COUNTS; ++i)
-      PARALLEL_COUNTS[i] = TOTAL_COUNTS[i];
+  // Put any previous counts also into the parallel-count accumulator
+  // (just put them all in the 1st one, it doesn't matter)
+  for (SmaInt i=0; i<NUM_COUNTS; ++i)
+    PARALLEL_COUNTS[i] = TOTAL_COUNTS[i];
 
-   // Get platform and device information
-   cl_platform_id platform_id = NULL;
-   cl_device_id device_id = NULL;   
-   cl_uint ret_num_devices;
-   cl_uint ret_num_platforms;
-   cl_int ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
-   cout << "clGetPlatformIDs returns " << ret << endl;
+  // Get platform and device information
+  cl_platform_id platform_id = NULL;
+  cl_device_id device_id = NULL;   
+  cl_uint ret_num_devices;
+  cl_uint ret_num_platforms;
+  cl_int ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
+  cout << "clGetPlatformIDs returns " << ret << endl;
     
-   ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, 
-                        &device_id, &ret_num_devices);
-   cout << "clGetDeviceIDs returns " << ret << endl;
+  ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, 
+                       &device_id, &ret_num_devices);
+  cout << "clGetDeviceIDs returns " << ret << endl;
 
-   // Create an OpenCL context
-   cl_context context = clCreateContext( NULL, 1, &device_id, NULL, NULL, &ret);
-   cout << "clCreateContext returns " << ret << endl;
+  // Create an OpenCL context
+  cl_context context = clCreateContext( NULL, 1, &device_id, NULL, NULL, &ret);
+  cout << "clCreateContext returns " << ret << endl;
    
-   // Create a command queue
+  // Create a command queue
 #ifdef WINDOZE
-   // not sure why the version of OpenCL I have for windoze prefers the deprecated function
-   cl_command_queue command_queue = clCreateCommandQueue              (context, device_id, NULL, &ret);
+  // not sure why the version of OpenCL I have for windoze prefers the deprecated function
+  cl_command_queue command_queue = clCreateCommandQueue              (context, device_id, NULL, &ret);
 #else
-   // OpenCL for Linux compiles the old function but gives a warning
-   cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, device_id, NULL, &ret);
+  // OpenCL for Linux compiles the old function but gives a warning
+  cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, device_id, NULL, &ret);
 #endif
-   cout << "clCreateCommandQueueWithProperties returns " << ret << endl;
+  cout << "clCreateCommandQueueWithProperties returns " << ret << endl;
 
-   // Create memory buffers on the device for each vector 
-   cl_mem inn_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, 
-                  (PARALLELS+1) * sizeof(BigInt),          NULL, &ret);
-   cout << "clClCreateBuffer(inn) returns " << ret << endl;
+  // Create memory buffers on the device for each vector 
+  cl_mem inn_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, 
+                                  (PARALLELS+1) * sizeof(BigInt),          NULL, &ret);
+  cout << "clClCreateBuffer(inn) returns " << ret << endl;
    
-   cl_mem out_obj = clCreateBuffer(context, CL_MEM_READ_WRITE,
-                  (PARALLELS*NUM_COUNTS) * sizeof(BigInt), NULL, &ret);
-   cout << "clClCreateBuffer(out) returns " << ret << endl;
+  cl_mem out_obj = clCreateBuffer(context, CL_MEM_READ_WRITE,
+                                  (PARALLELS*NUM_COUNTS) * sizeof(BigInt), NULL, &ret);
+  cout << "clClCreateBuffer(out) returns " << ret << endl;
 
-   // make sure device-side COUNTS buffer is initialized with zeroes
-   ret = clEnqueueWriteBuffer(command_queue, out_obj, CL_TRUE, 0,
-           (PARALLELS*NUM_COUNTS) * sizeof(BigInt), PARALLEL_COUNTS, 0, NULL, NULL);;
-   cout << "clClEnqueueWriteBuffer returns " << ret << endl;
-   
-
-   FILE* fp;
-   fp = fopen("enumerate_deals.cl", "r");
-   if (!fp) {
-      fprintf(stderr, "Failed to load kernel.\n");
-      exit(1);
-   }
-   const int MAX_SOURCE_SIZE = 1000000;
-   char* source_txt = new char[MAX_SOURCE_SIZE];
-   size_t source_size = fread(source_txt, 1, MAX_SOURCE_SIZE, fp);
-   fclose(fp);
-   cout << "Read CL source length " << source_size << endl;
-
-   string source_str = source_txt;
-   size_t pos = source_str.find("//SNIP");
-   
+  // make sure device-side COUNTS buffer is initialized with zeroes
+  ret = clEnqueueWriteBuffer(command_queue, out_obj, CL_TRUE, 0,
+                             (PARALLELS*NUM_COUNTS) * sizeof(BigInt), PARALLEL_COUNTS, 0, NULL, NULL);;
+  cout << "clClEnqueueWriteBuffer returns " << ret << endl;
    
 
-   ostringstream ostr;
-   ostr << "#define DEVICE_CODE 1\n"
-        << "#define   HOST_CODE 0\n"
-        << source_str.substr(0,pos)
-        << "__constant const SmaInt DEAL_SIZE="<<k<<";\n"
-        << "__constant const BigInt CHOOSE[" << NUM_CARDS+1 << "]["
-        << MAX_DEAL+1 << "] = {\n";
+  FILE* fp;
+  fp = fopen("enumerate_deals.cl", "r");
+  if (!fp) {
+    fprintf(stderr, "Failed to load kernel.\n");
+    exit(1);
+  }
+  const int MAX_SOURCE_SIZE = 1000000;
+  char* source_txt = new char[MAX_SOURCE_SIZE];
+  size_t source_size = fread(source_txt, 1, MAX_SOURCE_SIZE, fp);
+  fclose(fp);
+  cout << "Read CL source length " << source_size << endl;
 
-   for (int top=0; top<=NUM_CARDS; ++top) {
-      ostr << "   {" << CHOOSE[top][0];
-      for (int bot=1; bot<=MAX_DEAL; ++bot)
-         ostr << ", " << CHOOSE[top][bot];
-      ostr << (top < NUM_CARDS ? "},\n" : "}\n");
-   }
-   ostr << "};\n\n";
-
-   ostr << "__constant const SmaInt THIRD[" << NUM_CARDS << "]["
-        << NUM_CARDS << "] = {\n";
-   for (int a=0; a<NUM_CARDS; ++a) {
-      ostr << "   {" << THIRD[a][0];
-      for (int b=1; b<NUM_CARDS; ++b)
-         ostr << ", " << THIRD[a][b];
-      ostr << (a < NUM_CARDS-1 ? "},\n" : "}\n");
-   }
-   ostr << "};\n\n";
-
-   ostr << source_str.substr(pos);
-
-   source_str = ostr.str();
-   source_size = source_str.length();
-   const char* source_ptr = source_str.c_str();
-
-   //cout << "Full source\n\n" << source_str << "\n\n";
+  string source_str = source_txt;
+  size_t pos = source_str.find("//SNIP");
    
-   // Create and build the program
-   cl_program program = clCreateProgramWithSource(context, 1, 
-       &source_ptr, (const size_t *)&source_size, &ret);
-   cout << "clCreateProgramWithSource returns " << ret << endl;
    
-   ret = clBuildProgram(program, 1, &device_id,
-                        "-I/usr/include/x86_64-linux-gnu",
-                        NULL, NULL);
-   cout << "clBuildProgram returns " << ret << endl;
 
-   char log[2048];
-   size_t logsize;
-   ret = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG,
-                               sizeof(log), log, &logsize);
-   cout << "Build log:\n" << log << endl;
-   if (ret != CL_SUCCESS)
-      return;
+  ostringstream ostr;
+  ostr << "#define DEVICE_CODE 1\n"
+       << "#define   HOST_CODE 0\n"
+       << source_str.substr(0,pos)
+       << "__constant const SmaInt DEAL_SIZE="<<k<<";\n"
+       << "__constant const BigInt CHOOSE[" << NUM_CARDS+1 << "]["
+       << MAX_DEAL+1 << "] = {\n";
 
-   // Create the OpenCL kernel
-   cl_kernel kernel = clCreateKernel(program, "num_sets_kernel", &ret);
-   cout << "clCreateKernel returns " << ret << endl;
+  for (int top=0; top<=NUM_CARDS; ++top) {
+    ostr << "   {" << CHOOSE[top][0];
+    for (int bot=1; bot<=MAX_DEAL; ++bot)
+      ostr << ", " << CHOOSE[top][bot];
+    ostr << (top < NUM_CARDS ? "},\n" : "}\n");
+  }
+  ostr << "};\n\n";
+
+  ostr << "__constant const SmaInt THIRD[" << NUM_CARDS << "]["
+       << NUM_CARDS << "] = {\n";
+  for (int a=0; a<NUM_CARDS; ++a) {
+    ostr << "   {" << THIRD[a][0];
+    for (int b=1; b<NUM_CARDS; ++b)
+      ostr << ", " << THIRD[a][b];
+    ostr << (a < NUM_CARDS-1 ? "},\n" : "}\n");
+  }
+  ostr << "};\n\n";
+
+  ostr << source_str.substr(pos);
+
+  source_str = ostr.str();
+  source_size = source_str.length();
+  const char* source_ptr = source_str.c_str();
+
+  //cout << "Full source\n\n" << source_str << "\n\n";
    
-   // Set the arguments of the kernel
-   ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&inn_obj);
-   cout << "clSetKernelArg(inn) returns " << ret << endl;
-   ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&out_obj);
-   cout << "clSetKernelArg(out) returns " << ret << endl;
+  // Create and build the program
+  cl_program program = clCreateProgramWithSource(context, 1, 
+                                                 &source_ptr, (const size_t *)&source_size, &ret);
+  cout << "clCreateProgramWithSource returns " << ret << endl;
    
-   BigInt DONE=N0; // DONE is number processed so far,
-   //NUM_DEALS = 100000000; // only for test-running the first 'few'
+  ret = clBuildProgram(program, 1, &device_id,
+                       "-I/usr/include/x86_64-linux-gnu",
+                       NULL, NULL);
+  cout << "clBuildProgram returns " << ret << endl;
 
-   double t0 = clock(), tot_seconds;
-   while (DONE < NUM_DEALS) {
+  char log[2048];
+  size_t logsize;
+  ret = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG,
+                              sizeof(log), log, &logsize);
+  cout << "Build log:\n" << log << endl;
+  if (ret != CL_SUCCESS)
+    return;
 
-      BigInt NUM = PARALLELS*BATCHSIZE; // how many to do in a full loop
-      if (DONE+NUM > NUM_DEALS)          // last one may not be full
-         NUM = NUM_DEALS-DONE;
-      // NUM is how many to process this loop
+  // Create the OpenCL kernel
+  cl_kernel kernel = clCreateKernel(program, "num_sets_kernel", &ret);
+  cout << "clCreateKernel returns " << ret << endl;
+   
+  // Set the arguments of the kernel
+  ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&inn_obj);
+  cout << "clSetKernelArg(inn) returns " << ret << endl;
+  ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&out_obj);
+  cout << "clSetKernelArg(out) returns " << ret << endl;
+   
+  BigInt DONE=N0; // DONE is number processed so far,
+  //NUM_DEALS = 100000000; // only for test-running the first 'few'
 
-      BigInt PER = NUM / PARALLELS;
-      if (PER*PARALLELS < NUM)
-         PER +=1;
+  double t0 = clock(), tot_seconds;
+  while (DONE < NUM_DEALS) {
 
-      // Populate vector of deal numbers to process
-      // task i will work on DEALI_VEC[i]<=j<DEALI_VEC[i+1]
+    BigInt NUM = PARALLELS*BATCHSIZE; // how many to do in a full loop
+    if (DONE+NUM > NUM_DEALS)          // last one may not be full
+      NUM = NUM_DEALS-DONE;
+    // NUM is how many to process this loop
+
+    BigInt PER = NUM / PARALLELS;
+    if (PER*PARALLELS < NUM)
+      PER +=1;
+
+    // Populate vector of deal numbers to process
+    // task i will work on DEALI_VEC[i]<=j<DEALI_VEC[i+1]
+    for (BigInt I=0; I<PARALLELS; ++I) {
+      DEALI_VEC[I] = DONE + I*PER;
+      if (DEALI_VEC[I] > DONE+NUM) // don't let last batches overflow
+        DEALI_VEC[I] = DONE+NUM;
+      //cout << "task " << I << " starts with " << DEALI_VEC[I] << endl;
+    }
+    DEALI_VEC[PARALLELS] = DONE+NUM;
+    //cout << "task " << PARALLELS-1 << " ends with " << DEALI_VEC[PARALLELS] << endl;
+      
+    cl_event write_event, kernel_event, read_event;
+    // copy DEALI_VEC into device buffer
+    ret = clEnqueueWriteBuffer(command_queue, inn_obj, CL_TRUE, 0,
+                               (PARALLELS+1) * sizeof(BigInt), DEALI_VEC,
+                               0, NULL, &write_event);
+    if (ret!=CL_SUCCESS)
+      cout << "clClEnqueueWriteBuffer returns " << ret << endl;
+
+    // Execute kernels
+    size_t global_item_size=PARALLELS;//, local_item_size = PARALLELS;
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
+                                 &global_item_size, NULL, // &local_item_size
+                                 1, &write_event, // wait for writing
+                                 &kernel_event);  // before starting execution
+    if (ret!=CL_SUCCESS)
+      cout << "clEnqueueNDRangeKernel returns " << ret << endl;
+
+    // copy answers from device buffer
+    ret = clEnqueueReadBuffer(command_queue, out_obj, CL_TRUE, 0, 
+                              (PARALLELS*NUM_COUNTS) * sizeof(BigInt), PARALLEL_COUNTS,
+                              1, &kernel_event, // wait for execution
+                              &read_event);     // before reading
+    if (ret!=CL_SUCCESS)
+      cout << "clClEnqueueReadBuffer returns " << ret << endl;
+    clWaitForEvents(1, &read_event); // wait for reading device-->host to finish
+    // before trying to read ansas on the host
+      
+    // tabulate this batch of ansas
+    for (SmaInt j=0; j<NUM_COUNTS; ++j) {
+      TOTAL_COUNTS[j] = 0; // reset to 0, PARALLEL_COUNTS are cumulative
       for (BigInt I=0; I<PARALLELS; ++I) {
-         DEALI_VEC[I] = DONE + I*PER;
-         if (DEALI_VEC[I] > DONE+NUM) // don't let last batches overflow
-             DEALI_VEC[I] = DONE+NUM;
-         //cout << "task " << I << " starts with " << DEALI_VEC[I] << endl;
+        TOTAL_COUNTS[j] += PARALLEL_COUNTS[I*NUM_COUNTS + j];
+        //cout << I << " " << j << " " << PARALLEL_COUNTS[I*NUM_COUNTS + j] << endl;
       }
-      DEALI_VEC[PARALLELS] = DONE+NUM;
-      //cout << "task " << PARALLELS-1 << " ends with " << DEALI_VEC[PARALLELS] << endl;
-      
-      cl_event write_event, kernel_event, read_event;
-      // copy DEALI_VEC into device buffer
-      ret = clEnqueueWriteBuffer(command_queue, inn_obj, CL_TRUE, 0,
-                                 (PARALLELS+1) * sizeof(BigInt), DEALI_VEC,
-                                 0, NULL, &write_event);
-      if (ret!=CL_SUCCESS)
-         cout << "clClEnqueueWriteBuffer returns " << ret << endl;
-
-      // Execute kernels
-      size_t global_item_size=PARALLELS;//, local_item_size = PARALLELS;
-      ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
-                                   &global_item_size, NULL, // &local_item_size
-                                   1, &write_event, // wait for writing
-                                   &kernel_event);  // before starting execution
-      if (ret!=CL_SUCCESS)
-         cout << "clEnqueueNDRangeKernel returns " << ret << endl;
-
-      // copy answers from device buffer
-      ret = clEnqueueReadBuffer(command_queue, out_obj, CL_TRUE, 0, 
-                (PARALLELS*NUM_COUNTS) * sizeof(BigInt), PARALLEL_COUNTS,
-                                1, &kernel_event, // wait for execution
-                                &read_event);     // before reading
-      if (ret!=CL_SUCCESS)
-         cout << "clClEnqueueReadBuffer returns " << ret << endl;
-      clWaitForEvents(1, &read_event); // wait for reading device-->host to finish
-                                       // before trying to read ansas on the host
-      
-      // tabulate this batch of ansas
-      for (SmaInt j=0; j<NUM_COUNTS; ++j) {
-         TOTAL_COUNTS[j] = 0; // reset to 0, PARALLEL_COUNTS are cumulative
-         for (BigInt I=0; I<PARALLELS; ++I) {
-            TOTAL_COUNTS[j] += PARALLEL_COUNTS[I*NUM_COUNTS + j];
-            //cout << I << " " << j << " " << PARALLEL_COUNTS[I*NUM_COUNTS + j] << endl;
-         }
-      }
+    }
             
 
-      // Now that we are done with this batch, roll NUM into DONE
-      DONE += NUM;
-      // Once again DONE is the number of deals processed so far
-      // if DONE==NUM_DEALS this is the last time through the while loop
+    // Now that we are done with this batch, roll NUM into DONE
+    DONE += NUM;
+    // Once again DONE is the number of deals processed so far
+    // if DONE==NUM_DEALS this is the last time through the while loop
       
-      // intermittent reporting
-      double new_seconds = (clock()-t0)/CLOCKS_PER_SEC;
-      tot_seconds = seconds0 + new_seconds;
-      double frac = (DONE*1.0)/NUM_DEALS;
-      if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<tot_seconds;
-      else                 cout << frac    <<k<<","<<DONE<<","<<tot_seconds;
-      for (SmaInt i=0; i<NUM_COUNTS; ++i) {
-         cout << ",";
-         if (TOTAL_COUNTS[i])
-            cout << TOTAL_COUNTS[i];
-      }
-      cout << endl;
+    // intermittent reporting
+    double new_seconds = (clock()-t0)/CLOCKS_PER_SEC;
+    tot_seconds = seconds0 + new_seconds;
+    double frac = (DONE*1.0)/NUM_DEALS;
+    if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<tot_seconds;
+    else                 cout << frac    <<k<<","<<DONE<<","<<tot_seconds;
+    for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+      cout << ",";
+      if (TOTAL_COUNTS[i])
+        cout << TOTAL_COUNTS[i];
+    }
+    cout << endl;
 
-      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
+    dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
 
-      // BigInt TOTAL=0; // should add up to NUM_DEALS when we're done
-      // for (SmaInt i=0; i<NUM_COUNTS; ++i) {
-      //    double frac = (TOTAL_COUNTS[i]*1.0)/DONE;
-      //    cout << i << " sets: " << counts_dev[i] << " " << frac << endl;
-      //    TOTAL += counts_dev[i];
-      // }
+    // BigInt TOTAL=0; // should add up to NUM_DEALS when we're done
+    // for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+    //    double frac = (TOTAL_COUNTS[i]*1.0)/DONE;
+    //    cout << i << " sets: " << counts_dev[i] << " " << frac << endl;
+    //    TOTAL += counts_dev[i];
+    // }
       
-      //cout << "Total: " << TOTAL << " " << (TOTAL*1.0)/NUM_DEALS << endl << endl;
+    //cout << "Total: " << TOTAL << " " << (TOTAL*1.0)/NUM_DEALS << endl << endl;
 
-      if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS) {
-	print_projections(k, tot_seconds, DONE, MAX_SECONDS);
-	break; // quit early because of requested time limit
-      }
+    if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS) {
+      print_projections(k, tot_seconds, DONE, MAX_SECONDS);
+      break; // quit early because of requested time limit
+    }
       
-   } // loop through all batches
+  } // loop through all batches
 
-   delete[] DEALI_VEC; 
-   delete[] PARALLEL_COUNTS;
+  delete[] DEALI_VEC; 
+  delete[] PARALLEL_COUNTS;
 
-   print_projections(k, tot_seconds);
+  print_projections(k, tot_seconds);
 }
 
 
@@ -774,20 +776,20 @@ BigInt THREAD_CNTS[MAX_THREADS][NUM_COUNTS];
 
 
 void *enumerate_1thread(void *t) {
-   long my_id = (long)t;
+  long my_id = (long)t;
 
-   deal_type d;
-   BigInt N0 = THREAD_BEGS[my_id];
-   BigInt NN = THREAD_BEGS[my_id+1];
-   //printf("my_id = %ld N0 = %ld NN = %ld\n", my_id, N0, NN);
-   for (BigInt N=N0; N<NN; ++N) {
-      unrank_deal_serial(N, THREAD_CRDS, &d);
-      SmaInt nSETs = num_sets(&d, THREAD_CRDS);
-      //printf("my_id = %ld nSETs = %d\n", my_id, nSETs);
-      THREAD_CNTS[my_id][nSETs]++;
-   }
-   pthread_exit(NULL);
-   return 0;
+  deal_type d;
+  BigInt N0 = THREAD_BEGS[my_id];
+  BigInt NN = THREAD_BEGS[my_id+1];
+  //printf("my_id = %ld N0 = %ld NN = %ld\n", my_id, N0, NN);
+  for (BigInt N=N0; N<NN; ++N) {
+    unrank_deal_serial(N, THREAD_CRDS, &d);
+    SmaInt nSETs = num_sets(&d, THREAD_CRDS);
+    //printf("my_id = %ld nSETs = %d\n", my_id, nSETs);
+    THREAD_CNTS[my_id][nSETs]++;
+  }
+  pthread_exit(NULL);
+  return 0;
 }
    
 
@@ -795,145 +797,145 @@ void *enumerate_1thread(void *t) {
 void enumerate_thread(SmaInt k,         // deal size
                       BigInt PARALLELS, // number of parallel units to task
                       BigInt BATCHSIZE, // number of deals per task
-		      BigInt MAX_SECONDS)
+                      BigInt MAX_SECONDS)
 {
-   if (PARALLELS > MAX_THREADS) {
-      cerr << "MAX_THREADS = " << MAX_THREADS << endl;
-      exit(1);
-   }
+  if (PARALLELS > MAX_THREADS) {
+    cerr << "MAX_THREADS = " << MAX_THREADS << endl;
+    exit(1);
+  }
 
-   THREAD_CRDS = k;
-   BigInt TOTAL_COUNTS[NUM_COUNTS];
-   for (SmaInt i=0;  i<NUM_COUNTS;  ++i)
-      TOTAL_COUNTS[i] = 0;
+  THREAD_CRDS = k;
+  BigInt TOTAL_COUNTS[NUM_COUNTS];
+  for (SmaInt i=0;  i<NUM_COUNTS;  ++i)
+    TOTAL_COUNTS[i] = 0;
 
-   cout << "MAX_SECONDS for this run is " << MAX_SECONDS << endl;
+  cout << "MAX_SECONDS for this run is " << MAX_SECONDS << endl;
 
-   BigInt N0=0;
-   double seconds0, t0=clock();
-   restore_state(k, N0, seconds0, TOTAL_COUNTS);
-   for (int j=0; j<NUM_COUNTS; ++j)
-      THREAD_CNTS[0][j] = TOTAL_COUNTS[j];
-   deal_type d;
+  BigInt N0=0;
+  double seconds0, t0=clock();
+  restore_state(k, N0, seconds0, TOTAL_COUNTS);
+  for (int j=0; j<NUM_COUNTS; ++j)
+    THREAD_CNTS[0][j] = TOTAL_COUNTS[j];
+  deal_type d;
 
-   pthread_t threads[MAX_THREADS];
-   long    thread_is[MAX_THREADS];
-   pthread_attr_t attr;
-   pthread_attr_init(&attr);
-   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+  pthread_t threads[MAX_THREADS];
+  long    thread_is[MAX_THREADS];
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-   BigInt DONE=N0, NUM_DEALS=CHOOSE[NUM_CARDS][k];
-   while (DONE < NUM_DEALS) {
-      BigInt LEFT = NUM_DEALS - DONE;
-      BigInt BATCH_TOTAL = PARALLELS * BATCHSIZE;
-      BigInt PER_BATCH;
-      if (LEFT >= BATCH_TOTAL) {
-         PER_BATCH = BATCHSIZE;
-      } else {
-         BATCH_TOTAL = LEFT;
-         PER_BATCH   = LEFT / PARALLELS + 1; // integer division
-      }
-      //cout << "PER_BATCH " << PER_BATCH << endl;
+  BigInt DONE=N0, NUM_DEALS=CHOOSE[NUM_CARDS][k];
+  while (DONE < NUM_DEALS) {
+    BigInt LEFT = NUM_DEALS - DONE;
+    BigInt BATCH_TOTAL = PARALLELS * BATCHSIZE;
+    BigInt PER_BATCH;
+    if (LEFT >= BATCH_TOTAL) {
+      PER_BATCH = BATCHSIZE;
+    } else {
+      BATCH_TOTAL = LEFT;
+      PER_BATCH   = LEFT / PARALLELS + 1; // integer division
+    }
+    //cout << "PER_BATCH " << PER_BATCH << endl;
 
-      for (long i=0; i<=PARALLELS; ++i) 
-          THREAD_BEGS[i]         = DONE + i*PER_BATCH;
-      if (THREAD_BEGS[PARALLELS] > NUM_DEALS)
-          THREAD_BEGS[PARALLELS] = NUM_DEALS;
+    for (long i=0; i<=PARALLELS; ++i) 
+      THREAD_BEGS[i]         = DONE + i*PER_BATCH;
+    if (THREAD_BEGS[PARALLELS] > NUM_DEALS)
+      THREAD_BEGS[PARALLELS] = NUM_DEALS;
 
-      // for (long i=0; i<PARALLELS; ++i)
-      //    cout << "BATCH " << i << ": " << THREAD_BEGS[i] << "-->" << THREAD_BEGS[i+1] << endl;
+    // for (long i=0; i<PARALLELS; ++i)
+    //    cout << "BATCH " << i << ": " << THREAD_BEGS[i] << "-->" << THREAD_BEGS[i+1] << endl;
 
+    for (long i=0; i<PARALLELS; ++i) {
+      thread_is[i] = i;
+      pthread_create(&threads[i], &attr, enumerate_1thread, (void *)thread_is[i]);
+      //cout << "Created thread " << i << endl;
+    }
+
+    for (long i=0; i<PARALLELS; ++i) {
+      pthread_join(threads[i], NULL);
+      //cout << "Joined thread " << i << endl;
+    }
+
+
+    // tabulate this batch of ansas
+    for (SmaInt j=0; j<NUM_COUNTS; ++j) {
+      TOTAL_COUNTS[j] = 0; // reset to 0, THREAD_COUNTS are cumulative
       for (long i=0; i<PARALLELS; ++i) {
-         thread_is[i] = i;
-         pthread_create(&threads[i], &attr, enumerate_1thread, (void *)thread_is[i]);
-         //cout << "Created thread " << i << endl;
+        TOTAL_COUNTS[j] += THREAD_CNTS[i][j];
+        //cout << I << " " << j << " " << THREAD_COUNTS[I*NUM_COUNTS + j] << endl;
       }
+    }
 
-      for (long i=0; i<PARALLELS; ++i) {
-         pthread_join(threads[i], NULL);
-         //cout << "Joined thread " << i << endl;
-      }
-
-
-      // tabulate this batch of ansas
-      for (SmaInt j=0; j<NUM_COUNTS; ++j) {
-         TOTAL_COUNTS[j] = 0; // reset to 0, THREAD_COUNTS are cumulative
-         for (long i=0; i<PARALLELS; ++i) {
-            TOTAL_COUNTS[j] += THREAD_CNTS[i][j];
-            //cout << I << " " << j << " " << THREAD_COUNTS[I*NUM_COUNTS + j] << endl;
-         }
-      }
-
-      // Now that we are done with this batch, roll NUM into DONE
-      DONE += BATCH_TOTAL;
-      // Once again DONE is the number of deals processed so far
-      // if DONE==NUM_DEALS this is the last time through the while loop
+    // Now that we are done with this batch, roll NUM into DONE
+    DONE += BATCH_TOTAL;
+    // Once again DONE is the number of deals processed so far
+    // if DONE==NUM_DEALS this is the last time through the while loop
       
-      // intermittent reporting
-      double new_seconds = (clock()-t0)/CLOCKS_PER_SEC;
-      double tot_seconds = seconds0 + new_seconds;
-      double frac = (DONE*1.0)/NUM_DEALS;
-      if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<tot_seconds;
-      else                 cout << frac    <<k<<","<<DONE<<","<<tot_seconds;
-      for (SmaInt i=0; i<NUM_COUNTS; ++i) {
-         cout << ",";
-         if (TOTAL_COUNTS[i])
-            cout << TOTAL_COUNTS[i];
-      }
-      cout << endl;
+    // intermittent reporting
+    double new_seconds = (clock()-t0)/CLOCKS_PER_SEC;
+    double tot_seconds = seconds0 + new_seconds;
+    double frac = (DONE*1.0)/NUM_DEALS;
+    if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<tot_seconds;
+    else                 cout << frac    <<k<<","<<DONE<<","<<tot_seconds;
+    for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+      cout << ",";
+      if (TOTAL_COUNTS[i])
+        cout << TOTAL_COUNTS[i];
+    }
+    cout << endl;
 
-      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
+    dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
 
-      if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS) {
-	print_projections(k, tot_seconds, DONE, MAX_SECONDS);
-	break; // quit early because of requested time limit
-      }
-   }
+    if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS) {
+      print_projections(k, tot_seconds, DONE, MAX_SECONDS);
+      break; // quit early because of requested time limit
+    }
+  }
    
-   return;
+  return;
 }
 
 int main(int argc, char**argv) {
-   // precompute table of combinations up to C(81,12)
-   for   (SmaInt n=0; n<=NUM_CARDS; ++n)
-      for (SmaInt k=0; k<=MAX_DEAL;  ++k)
-         CHOOSE[n][k] = combinations(n,k);
+  // precompute table of combinations up to C(81,12)
+  for   (SmaInt n=0; n<=NUM_CARDS; ++n)
+    for (SmaInt k=0; k<=MAX_DEAL;  ++k)
+      CHOOSE[n][k] = combinations(n,k);
 
-   // precompute all the third cards for every pair that make SETs
-   for (SmaInt a=0; a<NUM_CARDS; ++a)
-   for (SmaInt b=0; b<NUM_CARDS; ++b)
+  // precompute all the third cards for every pair that make SETs
+  for (SmaInt a=0; a<NUM_CARDS; ++a)
+    for (SmaInt b=0; b<NUM_CARDS; ++b)
       THIRD[a][b] = compute_third(a,b);
 
-   self_test(); // run these every time. exit(1) on any test failing
-   if (argc < 3) // just the tests
-      return 0;
+  self_test(); // run these every time. exit(1) on any test failing
+  if (argc < 3) // just the tests
+    return 0;
    
 
-   int argi=1;
-   SmaInt k;
-   BigInt BATCHSIZE=1000, PARALLELS=1;
-   double MAX_SECONDS=0;
-   bool opencl = false;
-   while (argi<argc-1) {
-      string key     (argv[argi++]);
-      BigInt val(atoi(argv[argi++]));
-      if      (key == "CARDS")     k = val;
-      else if (key == "BATCHSIZE") BATCHSIZE = val;
-      else if (key == "PARALLELS") PARALLELS = val;
-      else if (key == "OPENCL")    opencl = val; // 0 or 1
-      else if (key == "MAX_HOURS")   MAX_SECONDS += val*3600;
-      else if (key == "MAX_SECONDS") MAX_SECONDS += val;
-      else {
-         cerr << "Unknown keyword " << key << endl;
-         exit(1);
-      }
-   }
+  int argi=1;
+  SmaInt k;
+  BigInt BATCHSIZE=1000, PARALLELS=1;
+  double MAX_SECONDS=0;
+  bool opencl = false;
+  while (argi<argc-1) {
+    string key     (argv[argi++]);
+    BigInt val(atoi(argv[argi++]));
+    if      (key == "CARDS")     k = val;
+    else if (key == "BATCHSIZE") BATCHSIZE = val;
+    else if (key == "PARALLELS") PARALLELS = val;
+    else if (key == "OPENCL")    opencl = val; // 0 or 1
+    else if (key == "MAX_HOURS")   MAX_SECONDS += val*3600;
+    else if (key == "MAX_SECONDS") MAX_SECONDS += val;
+    else {
+      cerr << "Unknown keyword " << key << endl;
+      exit(1);
+    }
+  }
 
-   if (opencl) {
-      enumerate_opencl(k, PARALLELS, BATCHSIZE, MAX_SECONDS);
-   } else if (PARALLELS>1) {
-      enumerate_thread(k, PARALLELS, BATCHSIZE, MAX_SECONDS);
-   } else {
-      enumerate_serial(k,            BATCHSIZE);
-   }
+  if (opencl) {
+    enumerate_opencl(k, PARALLELS, BATCHSIZE, MAX_SECONDS);
+  } else if (PARALLELS>1) {
+    enumerate_thread(k, PARALLELS, BATCHSIZE, MAX_SECONDS);
+  } else {
+    enumerate_serial(k,            BATCHSIZE);
+  }
 }
