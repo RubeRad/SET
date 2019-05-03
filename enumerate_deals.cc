@@ -376,16 +376,39 @@ void self_test() {
 
 
 void print_projections(SmaInt k,
-                       double seconds)
+                       double seconds,
+		       BigInt DONE=0,
+		       double MAX_SECONDS=0)
 {
-   double per_s = CHOOSE[NUM_CARDS][k]  / seconds;
-   for (SmaInt kk=k+1; kk<=MAX_DEAL; ++kk) {
+  BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
+  if (DONE!=0 && MAX_SECONDS != 0.0) {
+    // quitting early because of requested time limit
+    // print estimate of remaining time
+    double rate = DONE/seconds;
+    BigInt rem_deals = NUM_DEALS - DONE;
+    double rem_sec = rem_deals / rate;
+    double rem_hrs = rem_sec / 3600;
+    double rem_dys = rem_hrs / 24;
+    auto sav = cout.precision();
+    cout.precision(3);
+    cout << "Done: " << DONE << "/" << NUM_DEALS << " (" <<  DONE*100.0/NUM_DEALS << "%)\n"
+         << "Time: " << seconds << "s (" << seconds/3600 << "h)\n"
+         << "Rate: " << rate/1e6 << "M/s\n"
+         << "Left: " << rem_sec << "s ("
+                     << rem_hrs << "h) ("
+                     << rem_dys << "d)" << endl;
+    cout.precision(sav);
+  } else {
+    // finished, print projections for greater k
+    double per_s = NUM_DEALS / seconds;
+    for (SmaInt kk=k+1; kk<=MAX_DEAL; ++kk) {
       double  s = CHOOSE[NUM_CARDS][kk] / per_s;
       cout << kk<<"-set estimate: "
            << s << " seconds "
            << s/3600 << " hours "
            << s/3600/24 << " days" << endl;
-   }
+    }
+  }
 }
 
 
@@ -731,19 +754,8 @@ void enumerate_opencl(SmaInt k,         // deal size
       //cout << "Total: " << TOTAL << " " << (TOTAL*1.0)/NUM_DEALS << endl << endl;
 
       if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS) {
-	// quitting early because of requested time limit
-	// print estimate of remaining time
-	double rate = DONE/tot_seconds;
-	BigInt rem_deals = NUM_DEALS - DONE;
-	double rem_sec = rem_deals / rate;
-	double rem_hrs = rem_sec / 3600;
-	double rem_dys = rem_hrs / 24;
-	cout << DONE << " / " << tot_seconds << " = " << rate << "/sec"
-	     << "\nEst remaining:"
-	     << "\n  seconds: " << rem_sec
-	     << "\n  hours:   " << rem_hrs
-	     << "\n  days:    " << rem_dys << endl;
-	break;
+	print_projections(k, tot_seconds, DONE, MAX_SECONDS);
+	break; // quit early because of requested time limit
       }
       
    } // loop through all batches
@@ -873,19 +885,8 @@ void enumerate_thread(SmaInt k,         // deal size
       dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
 
       if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS) {
-	// quitting early because of requested time limit
-	// print estimate of remaining time
-	double rate = DONE/tot_seconds;
-	BigInt rem_deals = NUM_DEALS - DONE;
-	double rem_sec = rem_deals / rate;
-	double rem_hrs = rem_sec / 3600;
-	double rem_dys = rem_hrs / 24;
-	cout << DONE << " / " << tot_seconds << " = " << rate << "/sec"
-	     << "\nEst remaining:"
-	     << "\n  seconds: " << rem_sec
-	     << "\n  hours:   " << rem_hrs
-	     << "\n  days:    " << rem_dys << endl;
-	break;
+	print_projections(k, tot_seconds, DONE, MAX_SECONDS);
+	break; // quit early because of requested time limit
       }
    }
    
