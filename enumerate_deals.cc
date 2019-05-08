@@ -110,19 +110,19 @@ string tostr(const card_type& c) {
   ostr << compute_number(c) << "("
        << (c.attr[0] ? c.attr[0] : 3);  // 1 or 2 as-is, 0=3(mod 3)
   switch (c.attr[1]) { case GRN: ostr << 'g'; break;
-  case PPL: ostr << 'p'; break;  
-  case RED: ostr << 'r'; break;
-  default: DIE("Unknown color");
+    case PPL: ostr << 'p'; break;  
+    case RED: ostr << 'r'; break;
+    default: DIE("Unknown color");
   }
   switch (c.attr[2]) { case OPN: ostr << 'o'; break;  
-  case STR: ostr << 't'; break;
-  case SOL: ostr << 's'; break;  
-  default: DIE("Unknown color");
+    case STR: ostr << 't'; break;
+    case SOL: ostr << 's'; break;  
+    default: DIE("Unknown color");
   }
   switch (c.attr[3]) { case OVL: ostr << 'v'; break;  
-  case REC: ostr << 'c'; break;  
-  case SQG: ostr << 'q'; break;  
-  default: DIE("Unknown shape");
+    case REC: ostr << 'c'; break;  
+    case SQG: ostr << 'q'; break;  
+    default: DIE("Unknown shape");
   }
   ostr << ")";
   return ostr.str();
@@ -393,10 +393,10 @@ void print_projections(SmaInt k,
     cout.precision(3);
     cout << "Done: " << DONE << "/" << NUM_DEALS << " ("
                      <<  DONE*100.0/NUM_DEALS << "%)\n"
-         << "Time: " << seconds << "s ("
+         << "Time: " << (int)seconds << "s ("
                      << seconds/3600 << "h)\n"
          << "Rate: " << rate/1e6 << "M/s\n"
-         << "Left: " << rem_sec << "s ("
+         << "Left: " << (int)rem_sec << "s ("
                      << rem_hrs << "h) ("
                      << rem_dys << "d)" << endl;
     cout.precision(sav);
@@ -516,7 +516,8 @@ void enumerate_serial(SmaInt k,
 void enumerate_opencl(SmaInt k,         // deal size
                       BigInt PARALLELS, // number of parallel units to task
                       BigInt BATCHSIZE, // number of deals per task
-                      double MAX_SECONDS)
+                      double MAX_SECONDS,
+                      SmaInt FILTER_LOG)
 {
   DEAL_SIZE=k;
   BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
@@ -663,7 +664,7 @@ void enumerate_opencl(SmaInt k,         // deal size
   ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&out_obj);
   cout << "clSetKernelArg(out) returns " << ret << endl;
    
-  BigInt DONE=N0; // DONE is number processed so far,
+  BigInt DONE=N0, BATCHES=0; // DONE is number processed so far,
   //NUM_DEALS = 100000000; // only for test-running the first 'few'
 
   double t0 = clock(), tot_seconds;
@@ -728,6 +729,7 @@ void enumerate_opencl(SmaInt k,         // deal size
 
     // Now that we are done with this batch, roll NUM into DONE
     DONE += NUM;
+    BATCHES++;
     // Once again DONE is the number of deals processed so far
     // if DONE==NUM_DEALS this is the last time through the while loop
       
@@ -735,16 +737,23 @@ void enumerate_opencl(SmaInt k,         // deal size
     double new_seconds = (clock()-t0)/CLOCKS_PER_SEC;
     tot_seconds = seconds0 + new_seconds;
     double frac = (DONE*1.0)/NUM_DEALS;
-    if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<tot_seconds;
-    else                 cout << frac    <<k<<","<<DONE<<","<<tot_seconds;
-    for (SmaInt i=0; i<NUM_COUNTS; ++i) {
-      cout << ",";
-      if (TOTAL_COUNTS[i])
-        cout << TOTAL_COUNTS[i];
-    }
-    cout << endl;
 
-    dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
+    bool logit = false;
+    if (DONE==NUM_DEALS)                     logit = true;
+    if (!FILTER_LOG)                         logit = true;
+    if (FILTER_LOG && BATCHES%FILTER_LOG==0) logit = true;
+    if (logit) {
+      if (DONE==NUM_DEALS) cout << "FINAL,";
+      else                 cout << frac << ",";
+      cout <<k<<","<<DONE<<","<<tot_seconds;
+      for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+        cout << ",";
+        if (TOTAL_COUNTS[i])
+          cout << TOTAL_COUNTS[i];
+      }
+      cout << endl;
+      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
+    }
 
     // BigInt TOTAL=0; // should add up to NUM_DEALS when we're done
     // for (SmaInt i=0; i<NUM_COUNTS; ++i) {
@@ -797,7 +806,8 @@ void *enumerate_1thread(void *t) {
 void enumerate_thread(SmaInt k,         // deal size
                       BigInt PARALLELS, // number of parallel units to task
                       BigInt BATCHSIZE, // number of deals per task
-                      BigInt MAX_SECONDS)
+                      BigInt MAX_SECONDS,
+                      SmaInt FILTER_LOG)
 {
   if (PARALLELS > MAX_THREADS) {
     cerr << "MAX_THREADS = " << MAX_THREADS << endl;
@@ -824,7 +834,7 @@ void enumerate_thread(SmaInt k,         // deal size
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-  BigInt DONE=N0, NUM_DEALS=CHOOSE[NUM_CARDS][k];
+  BigInt DONE=N0, NUM_DEALS=CHOOSE[NUM_CARDS][k], BATCHES=0;
   while (DONE < NUM_DEALS) {
     BigInt LEFT = NUM_DEALS - DONE;
     BigInt BATCH_TOTAL = PARALLELS * BATCHSIZE;
@@ -868,6 +878,7 @@ void enumerate_thread(SmaInt k,         // deal size
 
     // Now that we are done with this batch, roll NUM into DONE
     DONE += BATCH_TOTAL;
+    BATCHES++;
     // Once again DONE is the number of deals processed so far
     // if DONE==NUM_DEALS this is the last time through the while loop
       
@@ -875,16 +886,23 @@ void enumerate_thread(SmaInt k,         // deal size
     double new_seconds = (clock()-t0)/CLOCKS_PER_SEC;
     double tot_seconds = seconds0 + new_seconds;
     double frac = (DONE*1.0)/NUM_DEALS;
-    if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<tot_seconds;
-    else                 cout << frac    <<k<<","<<DONE<<","<<tot_seconds;
-    for (SmaInt i=0; i<NUM_COUNTS; ++i) {
-      cout << ",";
-      if (TOTAL_COUNTS[i])
-        cout << TOTAL_COUNTS[i];
+    bool logit = false;
+    if (DONE==NUM_DEALS)                     logit = true;
+    if (!FILTER_LOG)                         logit = true;
+    if (FILTER_LOG && BATCHES%FILTER_LOG==0) logit = true;
+    if (logit) {
+      if (DONE==NUM_DEALS) cout << "FINAL,";
+      else                 cout << frac << ",";
+      cout <<k<<","<<DONE<<","<<tot_seconds;
+      for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+        cout << ",";
+        if (TOTAL_COUNTS[i])
+          cout << TOTAL_COUNTS[i];
+      }
+      cout << endl;
+      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
     }
-    cout << endl;
 
-    dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
 
     if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS) {
       print_projections(k, tot_seconds, DONE, MAX_SECONDS);
@@ -914,6 +932,7 @@ int main(int argc, char**argv) {
   int argi=1;
   SmaInt k;
   BigInt BATCHSIZE=1000, PARALLELS=1;
+  SmaInt FILTER_LOG=0;
   double MAX_SECONDS=0;
   bool opencl = false;
   while (argi<argc-1) {
@@ -925,6 +944,7 @@ int main(int argc, char**argv) {
     else if (key == "OPENCL")    opencl = val; // 0 or 1
     else if (key == "MAX_HOURS")   MAX_SECONDS += val*3600;
     else if (key == "MAX_SECONDS") MAX_SECONDS += val;
+    else if (key == "FILTER_LOG")  FILTER_LOG = (SmaInt)val;
     else {
       cerr << "Unknown keyword " << key << endl;
       exit(1);
@@ -932,9 +952,9 @@ int main(int argc, char**argv) {
   }
 
   if (opencl) {
-    enumerate_opencl(k, PARALLELS, BATCHSIZE, MAX_SECONDS);
+    enumerate_opencl(k, PARALLELS, BATCHSIZE, MAX_SECONDS, FILTER_LOG);
   } else if (PARALLELS>1) {
-    enumerate_thread(k, PARALLELS, BATCHSIZE, MAX_SECONDS);
+    enumerate_thread(k, PARALLELS, BATCHSIZE, MAX_SECONDS, FILTER_LOG);
   } else {
     enumerate_serial(k,            BATCHSIZE);
   }
