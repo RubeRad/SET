@@ -738,22 +738,20 @@ void enumerate_opencl(SmaInt k,         // deal size
     tot_seconds = seconds0 + new_seconds;
     double frac = (DONE*1.0)/NUM_DEALS;
 
-    bool logit = false;
-    if (DONE==NUM_DEALS)                     logit = true;
-    if (!FILTER_LOG)                         logit = true;
-    if (FILTER_LOG && BATCHES%FILTER_LOG==0) logit = true;
-    if (logit) {
-      if (DONE==NUM_DEALS) cout << "FINAL,";
-      else                 cout << frac << ",";
-      cout <<k<<","<<DONE<<","<<tot_seconds;
-      for (SmaInt i=0; i<NUM_COUNTS; ++i) {
-        cout << ",";
-        if (TOTAL_COUNTS[i])
+    // print to screen always
+    if (DONE==NUM_DEALS) cout << "FINAL,";
+    else                 cout << frac << ",";
+    cout <<k<<","<<DONE<<","<<tot_seconds;
+    for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+       cout << ",";
+       if (TOTAL_COUNTS[i])
           cout << TOTAL_COUNTS[i];
-      }
-      cout << endl;
-      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
     }
+    cout << endl;
+
+    // dump to file only periodically
+    if (DONE==NUM_DEALS || BATCHES%FILTER_LOG==0) 
+      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
 
     // BigInt TOTAL=0; // should add up to NUM_DEALS when we're done
     // for (SmaInt i=0; i<NUM_COUNTS; ++i) {
@@ -765,6 +763,7 @@ void enumerate_opencl(SmaInt k,         // deal size
     //cout << "Total: " << TOTAL << " " << (TOTAL*1.0)/NUM_DEALS << endl << endl;
 
     if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS) {
+      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
       print_projections(k, tot_seconds, DONE, MAX_SECONDS);
       break; // quit early because of requested time limit
     }
@@ -886,25 +885,23 @@ void enumerate_thread(SmaInt k,         // deal size
     double new_seconds = (clock()-t0)/CLOCKS_PER_SEC;
     double tot_seconds = seconds0 + new_seconds;
     double frac = (DONE*1.0)/NUM_DEALS;
-    bool logit = false;
-    if (DONE==NUM_DEALS)                     logit = true;
-    if (!FILTER_LOG)                         logit = true;
-    if (FILTER_LOG && BATCHES%FILTER_LOG==0) logit = true;
-    if (logit) {
-      if (DONE==NUM_DEALS) cout << "FINAL,";
-      else                 cout << frac << ",";
-      cout <<k<<","<<DONE<<","<<tot_seconds;
-      for (SmaInt i=0; i<NUM_COUNTS; ++i) {
-        cout << ",";
-        if (TOTAL_COUNTS[i])
-          cout << TOTAL_COUNTS[i];
-      }
-      cout << endl;
-      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
-    }
 
+    // print to screen always
+    if (DONE==NUM_DEALS) cout << "FINAL,";
+    else                 cout << frac << ",";
+    cout <<k<<","<<DONE<<","<<tot_seconds;
+    for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+       cout << ",";
+       if (TOTAL_COUNTS[i])
+          cout << TOTAL_COUNTS[i];
+    }
+    cout << endl;
+
+    if (DONE==NUM_DEALS || BATCHES%FILTER_LOG==0) 
+      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
 
     if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS) {
+      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
       print_projections(k, tot_seconds, DONE, MAX_SECONDS);
       break; // quit early because of requested time limit
     }
@@ -932,7 +929,7 @@ int main(int argc, char**argv) {
   int argi=1;
   SmaInt k;
   BigInt BATCHSIZE=1000, PARALLELS=1;
-  SmaInt FILTER_LOG=0;
+  SmaInt FILTER_LOG=1;
   double MAX_SECONDS=0;
   bool opencl = false;
   while (argi<argc-1) {
