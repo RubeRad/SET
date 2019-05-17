@@ -525,8 +525,10 @@ new_kid(root,0,x[l]);
 for(j= 1;j<l;j++)printf(".");
 non_iso_count[l]++;
 for(k= 0;x[k+1]==k;k++);
+
 total_count[l]+= multiplier[k-1]/(double)auts;
-printf("%04d (%d:%d) %d\n",decode[x[l]],auts,k,node_ptr-nodes);
+printf("%04d (%d:%d) %d %.0f\n",decode[x[l]],auts,k,node_ptr-nodes,
+       multiplier[k-1]/(double)auts);
 
 /*:45*/
 #line 793 "setset-all.w"
