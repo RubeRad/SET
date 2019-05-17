@@ -132,7 +132,15 @@ ostream& operator<<(ostream& ostr, const card_type& c) {
   ostr << tostr(c);
   return ostr;
 }
-  
+
+string tostr(const deal_type& d, SmaInt k) {
+   ostringstream ostr;
+   for (int i=0; i<k; ++i)
+      ostr << d.card[i] << ' ';
+   return ostr.str();
+}
+
+
 
 // Using the combinatorial number system, convert a number into the
 // combination corresponding to that number
@@ -255,6 +263,33 @@ void self_test() {
   for (int i=0; i<12; ++i)   // for all 12 cards
     ASSERT_EQ(recurse.card[i],
               serial.card[i], "serial unranking matches recursive");
+
+  // Verify that increment_deal works the same as fully unranking for the first
+  // 1000 6-card deals
+  deal_type full, increment;
+  SmaInt num_cards=6;
+  unrank_deal_serial(0, num_cards, &increment);
+  for (BigInt N=1; N<1000; ++N) {
+     unrank_deal_serial(N, num_cards, &full);
+     increment_deal(num_cards, &increment);
+     for (int i=0; i<num_cards; ++i)
+        ASSERT_EQ(full.card[i], increment.card[i],
+                  "full unranking vs increment_deal");
+  }
+
+  // Verify that increment_deal works the same as fully unranking for the last
+  // 1000 12-card deals
+  BigInt N0 = CHOOSE[81][12]-1000;
+  unrank_deal_serial(N0, 12, &increment);
+  for (BigInt N=1; N<1000; ++N) {
+     unrank_deal_serial(N0+N, 12, &full);
+     increment_deal(12, &increment);
+     for (int i=0; i<12; ++i)
+        ASSERT_EQ(full.card[i], increment.card[i],
+                  "full unranking vs increment_deal");
+  }
+  
+  
   
   card_type c = create_card(0);
   for (SmaInt i=0; i<4; ++i)

@@ -70,6 +70,43 @@ void unrank_deal_serial(BigInt origN, SmaInt origk,
 }
 
 
+// kernel code becomes very inefficient if it has branching and simultaneous
+// kernels take different branches. Write increment_deal with no branching
+void increment_deal(SmaInt num_cards, deal_type* deal) {
+   SmaInt increment_index=MAX_DEAL;      // illegal value
+   bool   found_increment_index = false; // haven't found index to increment yet
+
+   // process all but the first card (can't compare first to previous)
+   for (SmaInt pos=num_cards-1; pos>0; --pos) {
+      bool this_pos_can_increment = (deal->card[pos] < deal->card[pos-1]-1);
+      // if (this_pos_can_increment) pos_or_max = pos
+      // else                        pos_or_max = MAX_DEAL
+      SmaInt pos_or_max = (this_pos_can_increment)*pos +
+                         (!this_pos_can_increment)*MAX_DEAL;
+      // if (found_increment_index) increment_index = increment_index;
+      // else                       increment_index = pos_or_max;
+      increment_index = (found_increment_index) * increment_index
+                     + (!found_increment_index) * pos_or_max;
+      found_increment_index = (increment_index<MAX_DEAL);
+   }
+
+   // process first card
+   // if (found_increment_index) increment_index = increment_index;
+   // else                       increment_index = 0;
+   increment_index = (found_increment_index)*increment_index;
+   //             + (!found_increment_index*0;
+
+   for (SmaInt pos=0; pos<num_cards; ++pos) {
+      // if      (pos< increment_index) card[pos] = card[pos]
+      // else if (pos==increment_index) card[pos]+= 1
+      // else                           card[pos] = num_cards-1-pos
+      deal->card[pos] = (pos< increment_index) * (deal->card[pos])
+                      + (pos==increment_index) * (deal->card[pos]+1)
+                      + (pos> increment_index) * (num_cards-1-pos);
+   }
+}
+
+
 // this function is kinda important
 inline bool is_a_set(const card_num a,
                      const card_num b,
@@ -112,13 +149,19 @@ __kernel void num_sets_kernel(
 
    BigInt NBEG = DEALI[taski];
    BigInt NEND = DEALI[taski+1];
-   SmaInt k = DEAL_SIZE;
    deal_type d;
-   
+
+   // this is branchy, but maybe unavoidable first time
+   unrank_deal_serial(NBEG, DEAL_SIZE, &d);
+
+   // is it necessary/helpful to put a gate right here?
+   // or would simultaneous kernels wait for each other anyways?
+
+   // in this main loop there is no branching
    for (BigInt N=NBEG; N<NEND; ++N) {
-      unrank_deal_serial(N, k, &d);
       SmaInt nSETs = num_sets(&d, DEAL_SIZE);
       local_counts[nSETs]++;
+      increment_deal(DEAL_SIZE, &d);
    }
 
    // After this work item has counted up all its work,
