@@ -10,6 +10,9 @@ all: enumerate_deals
 enumerate_deals: enumerate_deals.cc enumerate_deals.cl
 	$(CXX) $(CXXFLAGS) -o enumerate_deals enumerate_deals.cc -lOpenCL -lpthread
 
+enumerate_deals.pdf: enumerate_deals.tex
+	pdflatex enumerate_deals.tex
+
 cltest: cltest.cc
 	$(CXX) $(CXXFLAGS) -o cltest $^ -lOpenCL
 

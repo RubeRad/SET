@@ -146,26 +146,35 @@ string tostr(const deal_type& d, SmaInt k) {
 // combination corresponding to that number
 // See https://en.wikipedia.org/wiki/Combinatorial_number_system
 // original flavor (recursive)
-void unrank_deal(BigInt N, SmaInt k,
+// The return value is the number of steps (since this recursive version is not
+// used for actual computation anymore, it is not important to be performant
+int unrank_deal(BigInt N, SmaInt k,
                  card_num* card_ptr)
 {
+  int steps=0;
   if (k==1) {
     *card_ptr = N;
+    ++steps;
     // cout << "N " << N << " k " << k << " card " << *deal << endl;
-    return;
+    return steps;
   }
 
   SmaInt n = 0; // find the last n for which C(n,k) <= N
-  while (CHOOSE[n][k] <= N)
+  while (CHOOSE[n][k] <= N) {
     ++n;
+    ++steps;
+  }
   // now n>CHOOSE[n][k], so back up 1
   --n;
   *card_ptr = n;
+  ++steps;
   // cout << "N " << N << " k " << k << " card " << *deal << endl;
 
   // unrank smaller combination starting with next pointer
-  unrank_deal(N - CHOOSE[n][k], k-1, card_ptr+1);
+  return steps + unrank_deal(N - CHOOSE[n][k], k-1, card_ptr+1);
 }
+
+
 
 
 // this is slower, now that we switched to cards stored just as numbers 0..80,
@@ -402,6 +411,26 @@ void self_test() {
   }
 #endif
 
+#if 0
+  // test avg number of steps per unranking
+  for (SmaInt k=7; k<8; ++k) {
+     BigInt sum=0;
+     for (BigInt N=0; N<CHOOSE[81][k]; ++N) {
+        sum += unrank_deal(N, k, &deal.card[0]);
+     }
+     double avg = sum*1.0 / CHOOSE[81][k];
+     cout << "Avg steps to unrank " << k << ": " << avg << endl;
+  }
+  // results:
+  // Avg steps to unrank 2: 56.6667
+  // Avg steps to unrank 3: 105.5
+  // Avg steps to unrank 4: 151.6
+  // Avg steps to unrank 5: 196.333
+  // Avg steps to unrank 6: 240.286
+  // Avg steps to unrank 7: 283.75
+  // regression: y = 45.25x - 32.98
+#endif
+
   cout << "Self-tests passed" << endl;
 }
 
@@ -505,12 +534,13 @@ void dump_state(SmaInt k,
 
 void enumerate_serial(SmaInt k,
                       BigInt BATCHSIZE,
-                      BigInt START=0,
+                      double MAX_SECONDS=0.0,
                       const string& fname="")
 {
   DEAL_SIZE=k;
   BigInt NUM_DEALS = CHOOSE[NUM_CARDS][k];
   cout << "Num deals for " << k << " cards is " << NUM_DEALS << endl;
+  cout << "MAX_SECONDS for this run is " << MAX_SECONDS << endl;
 
   BigInt TOTAL_COUNTS[NUM_COUNTS];
   for (SmaInt i=0;  i<NUM_COUNTS;  ++i)
@@ -521,7 +551,7 @@ void enumerate_serial(SmaInt k,
   restore_state(k, N0, seconds0, TOTAL_COUNTS, fname);
 
   deal_type d;
-  double t0 = clock(), seconds;
+  double t0 = clock(), tot_seconds, new_seconds;
   for (BigInt N=N0; N<NUM_DEALS; ++N) {
     unrank_deal_serial(N, k, &d);
     SmaInt nSETs = num_sets(&d, k);
@@ -530,21 +560,28 @@ void enumerate_serial(SmaInt k,
     // intermittent reporting
     BigInt DONE=N+1;
     if (DONE==NUM_DEALS || (DONE%BATCHSIZE==0)) {
-      seconds = seconds0 + (clock()-t0)/CLOCKS_PER_SEC;
+      new_seconds = (clock()-t0)/CLOCKS_PER_SEC;
+      tot_seconds = seconds0 + new_seconds;
       double frac = (DONE*1.0)/NUM_DEALS;
-      if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<seconds;
-      else                 cout << frac    <<k<<","<<DONE<<","<<seconds;
+      if (DONE==NUM_DEALS) cout << "FINAL,"<<k<<","<<DONE<<","<<tot_seconds;
+      else                 cout << frac    <<k<<","<<DONE<<","<<tot_seconds;
       for (SmaInt i=0; i<NUM_COUNTS; ++i) {
         cout << ",";
         if (TOTAL_COUNTS[i])
           cout << TOTAL_COUNTS[i];
       }
       cout << endl;
-      dump_state(k, DONE, seconds, TOTAL_COUNTS);
+      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
+
+      if (MAX_SECONDS != 0.0 && new_seconds > MAX_SECONDS) {
+         dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
+         print_projections(k, tot_seconds, DONE, MAX_SECONDS);
+         break; // quit early because of requested time limit
+      }
     }
   }
 
-  print_projections(k, seconds);
+  print_projections(k, tot_seconds);
 }
 
 
@@ -988,6 +1025,6 @@ int main(int argc, char**argv) {
   } else if (PARALLELS>1) {
     enumerate_thread(k, PARALLELS, BATCHSIZE, MAX_SECONDS, FILTER_LOG);
   } else {
-    enumerate_serial(k,            BATCHSIZE);
+    enumerate_serial(k,            BATCHSIZE, MAX_SECONDS);
   }
 }
