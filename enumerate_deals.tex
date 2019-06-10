@@ -1,6 +1,5 @@
 \documentclass[10pt]{amsart}
 \usepackage[total={6.5in,9in},centering]{geometry}
-%\documentclass{article}
 \usepackage{amsmath}
 \usepackage{graphicx} % for png figures
 \usepackage{subcaption} % for subfigures
@@ -8,40 +7,16 @@
 \usepackage{hyperref}
 \usepackage[yyyymmdd]{datetime}
 \renewcommand{\dateseparator}{-}
-%\usepackage{amsaddr} % addresses up front
+\usepackage{amsaddr} % addresses up front
 %\usepackage{amssymb, amsmath, bm, nameref}
 \pagenumbering{gobble} % no page numbers
 
-\newcommand{\Iimg}{\mathcal{I}}
-\newcommand{\Pimg}{\mathcal{P}}
-
-\newcommand{\imgmeashat}{\pmb{\hat{x}_{i}}}
-\newcommand{\imgmeas}{\pmb{x_{i}}}
-\newcommand{\grndhat}{\pmb{\hat{X}}}
-\newcommand{\grnd}{\pmb{X}}
-\newcommand{\grnditer}{\pmb{X^k}}
-\newcommand{\sensmeashat}{\pmb{\hat{p}_i}}
-\newcommand{\sensmeas}{\pmb{p_i}}
-\newcommand{\imgnu}{\pmb{\nu_{i}^m}}
-\newcommand{\sensnu}{\pmb{\nu_i^p}}
-\newcommand{\grndupdate}{\pmb{\Delta}}
-\newcommand{\grndupdateiter}{\pmb{\Delta^k}}
-\newcommand{\Fimgpartials}{\frac{\partial{\pmb{F_{i}}}}{\partial{\imgmeas}}}
-\newcommand{\Fgrndpartials}{\frac{\partial{\pmb{F_{i}}}}{\partial{\grnd}}}
-\newcommand{\Fsenspartials}{\frac{\partial{\pmb{F_{i}}}}{\partial{\sensmeas}}}
-\newcommand{\btwbi}{B'_iW_iB_i}
-\newcommand{\btwbii}{B'_{i+1}W_{i+1}B_{i+1}}
-\newcommand{\btwbj}{B'_jW_jB_j}
-\newcommand{\btwbone}{B'_1W_1B_1}
-\newcommand{\btwbtwo}{B'_2W_2B_2}
-\newcommand{\btwbthr}{B'_3W_3B_3}
-\newcommand{\btwbfor}{B'_4W_4B_4}
 \newcommand{\SETb}{SET\texttrademark\ } % this one has a space after
 \newcommand{\SET}{SET\texttrademark}  % this one has no space, so it can be
-                                       % followed by a comma or period
+                                      % followed by a comma or period
 
-\newtheorem{theorem}{Theorem}
-
+\newcommand{\SETSET}{  {\sc setset} }
+\newcommand{\SETSETA}{ {\sc setset-all} }
 
 \begin{document}
 
@@ -63,21 +38,22 @@ enumerated exhaustively for somewhat larger numbers. But for 12 cards (the
 starting number of cards according to the rules of \SET) combinatorial explosion
 has so far prohibited direct enumeration, allowing only estimation of
 probabilities by simulation. In this result, massively parallel programming on a
-Graphical Processing Unit (GPU) is used to enumerate all possible deals of up to
-12 cards. The probability that an opening deal of 12 \SETb cards does not
-contain a SET is exactly $2284535476080/70724320184700 \approx 3.2302\%$.
+Graphical Processing Unit (GPU) is used to exhaustively enumerate all possible
+deals of up to 12 cards, in about 100 hours. In particular, the probability that
+an opening deal of 12 \SETb cards does not contain a SET is exactly
+$2284535476080/70724320184700 \approx 3.2302\%$.
 \end{abstract}
 
 \section{Introduction}
-In the card game \SET, each card depicts 4 attributes, and each attribute
-(number, texture, color, shape) has 3 possible values, for a total of $3^4=81$
-cards. A `SET' is defined as a set\footnote{Note that \SETb will refer to the
-  card game, and `SET' will refer to a SET in the game of \SET, while the normal
-  mathematical sense (an unordered collection) will be called just a `set'.} of
-3 cards for which are either all the same, or all different, in each
-attribute. As such, the card game is equivalent to the finite geometry AG(4,3);
-cards are analogous to points, and SETs are lines (sets of collinear
-points).
+In the card game \SET\cite{SET}, each card depicts 4 attributes, and each
+attribute (number, texture, color, shape) has 3 possible values, for a total of
+$3^4=81$ cards. A `SET' is defined as a set\footnote{A note on terminology:
+  \SETb will refer to the card game, `SET' will refer to a SET according to the
+  rules of the game, and 'set' will take its normal mathematical sense of an
+  unordered collection.} of 3 cards for which are either all the same, or all
+different, in each attribute. As such, the card game is equivalent to the finite
+geometry AG(4,3) (4 dimensions, 3 values); cards are analogous to points, and
+SETs are lines (sets of collinear points).
 
 Extending the geometric analogy, just as 3 non-collinear points determine a
 plane (and all the lines between points in the plane lie in the plane), a
@@ -99,9 +75,20 @@ card appropriately so that each digit sum is $\equiv 0 \pmod 3$.
 
 The rules of \SETb specify that a game begins by dealing 12 cards. As long as no
 SET is present, 3 more cards are dealt. So the question naturally arises, what
-is the probability that 12 cards have no SET? Or more generally, what is the
-probability distribution of all possible numbers of SETs that 12 cards may
-contain?
+is the probability that 12 cards have no SET? Or more generally, {\bf What is
+  the probability distribution of all possible numbers of SETs that 12 cards may
+  contain?} That is the question addressed by this work.
+
+If the initial deal has no SETs, additional cards are dealt (three at a time)
+until a SET is found. How far could this process go? It is known that the
+largest possible collection of cards with no SET is 20, so in the vanishingly
+unlikely case that a game of SET reaches 21 cards, there will definitely be a
+SET. It turns out that this question was answered before the game of \SETb was
+invented. The affine geometry analogue of a maximal collection of SET cards with
+no SET is called a `maximal cap', and in 1971 it was proven that the size of
+maximal caps in AG(4,3) is 20 \cite{MAXCAP}. This provides a useful bound for
+how far to extend analysis of how many cards contain how many SETs; larger
+numbers of cards can never occur in a (well-played) game of \SET.
 
 \section{Previous Results}
 A complete enumeration must consider $\binom{81}{12} \approx 7\times 10^{13}$
@@ -112,40 +99,67 @@ feasible with streamlined code and faster machines or parallel processing.''
 
 Donald Knuth tackled the more specific problem of counting how many deals have 0
 SETs. Knuth achieves tremendous speedup over exhaustive enumeration by using
-``isomorph rejection'' (i.e. `streamlined code'). Knuth improved on his first
-solution \cite{SETSET} by expanding the size of his isomorphism groups
-\cite{SETSET-ALL}, thus requiring the consideration of fewer specific cases.
+``isomorph rejection'' (i.e. `streamlined code'). Knuth called his program to
+find SETless $k$-sets, \SETSET \cite{SETSET}. 
 
 For instance, using the 4-digit ternary representation, the first 1-card deal is
-simply $\{0000\}$. That does not contain a SET, and there are 81 total 1-card
-deals which do not have SETs because they are isomorphic to the first
-one. Because the other 80 1-card sets are isomorphic to the first, Knuth's
-program doesn't need to enumerate them.
+$\{0000\}$. That does not contain a SET, and there are 81 total 1-card deals
+which do not have SETs because they are isomorphic to the first one. Because the
+other 80 1-card sets are isomorphic to the first, \SETSET didn't need to enumerate
+them. Similarly, \SETSET determined that there are 3240 SETless 2-sets, comprised of
+4 isomorphism groups, by inspecting only 4 representative cases; and there are
+84240 SETless 3-sets, in 16 isomorphism groups, so only 16 specific cases need
+to be enumerated. In total, \SETSET was able to account for
+$\Sigma_{k=1}^{21}\binom{81}{k}\approx 1.6\times 10^{13}$ SETless $k$-sets by
+inspecting only $5.14\times 10^8$ cases, and avoiding inspection of isomorphic
+cases. Running \SETSET on an iCore 7 ?? takes about four and a half hours. 
 
-The 2- and 3-card deals are similarly simple, but the 4-card case is more
-illustrative. Knuth's enumeration of sets of 4 cards goes no further than
-$\{0000, 0001, 0010, 0011\}$ and $\{0000, 0001, 0010, 0100\}$.\footnote{Note
-  card 0002 is omitted in these sets, because it forms a set with 0000 and
-  0001.}  Those sets determine isomorphism groups of 63180 and 1516320 no-SET
-4-sets, respectively. Knuth is able to prune the 4-card enumeration beyond that
-point by determining that all remaining 4-sets either is isomorphic to one of
-those two, or contains a SET. So there are exactly $63180+1516320=1579500$ of
-all possible $\binom{81}{4}=1663740$ 4-sets contain no SET. That leaves 1080
-4-sets -- it is straightforward to analytically determine that all 1080 of them
-contain exactly 1 SET (\cite{JOS}, p.~55).
+%For 2-card sets, again the first case $\{0000,
+%0001\}$ is SETless, and by isomorphism represents all 2-sets, knocking off all
+%$\binom{81}{2}=3240$ 2-sets by inspecting just the 1 case. And for 3 cards, the
+%first case $\{0000, 0001, 0002\}$ is a SET, so it is ignored. The next case
+%$\{0000, 0001, 0010\}$ is not a set (therefore does not contain a SET), and is
+%in an isomorphism group of size 84240. 
 
-The analytical evaluation of 5-card deals (\cite{JOS}, pp.~56-9) yields 22441536
-5-sets with 0 SETs, 3116880 5-sets with 1 SET, and 63180 5-sets with 2 SETs (see
-also Table \ref{THE_TABLE}). Knuth's solution also yields 3116880 0-SET 5-sets,
-but does not provide the distinction between 1-SET and 2-SET counts, because the
-search is pruned whenever a first SET is encountered.
+Later, Knuth improved on his the solution in \SETSET by expanding the size of
+his isomorphism groups, thus requiring the consideration of fewer representative
+cases. The revised version was called \SETSETA\cite{SETSET-ALL}.  The 4-card
+case is illustrative. Knuth writes of the slower \SETSET for the 4-card case:
+\begin{quote}
+  The total number of such [SETless] sets is 1516320 + 63180 = 1579500, a number
+  that the \SETSET program was able to compute only after it had laboriously
+  considered 128 cases that were nonisomorphic in the previous setup.
+\end{quote}
+\SETSETA found just 2 isomorphism groups (cases) of SETless 4-sets. Because of
+its larger isomorphism groups, \SETSETA is able to complete the analysis by
+consider many fewer representative cases. Compared to the $5.14\times 10^8$
+cases evaluated by \SETSET, \SETSETA dealt with only 9906 cases, and thus runs
+(on the same hardware) in only 3m45s.
 
-Knuth's analysis of the 0-SET problem is complete, in that he provides counts of
-0-SET $k$-sets for $k$ up to 21. It known \cite{MAXCAP} that all sets of at
-least $k=21$ cards contain SETs (a set of 20 cards with no SET corresponds to
-what is called a 'maximal cap' in affine geometry). In particular, Knuth
-provides a value of 2284535476080 SETless 12-sets, which our enumeration will
-match, as well as providing the number of 12-sets which have 1 SET, 2 SETs, etc.
+%% Knuth's enumeration of sets of 4 cards goes no further than $\{0000, 0001, 0010,
+%% 0011\}$ and $\{0000, 0001, 0010, 0100\}$.\footnote{Note card 0002 is omitted in
+%%   these sets, because it forms a set with 0000 and 0001.}  Those sets determine
+%% isomorphism groups of 63180 and 1516320 no-SET 4-sets, respectively. Knuth is
+%% able to prune the 4-card enumeration beyond that point by determining that all
+%% remaining 4-sets either is isomorphic to one of those two, or contains a SET. So
+%% there are exactly $63180+1516320=1579500$ of all possible
+%% $\binom{81}{4}=1663740$ 4-sets contain no SET. That leaves 1080 4-sets.
+
+
+For small cases (3, 4, and 5 cards) it is straightforward to achieve these
+results analytically. For 3 and 4 cards, there are either 0 SETs, or there is 1
+SET. But for 5, the possibility arises for either one or two SETs. \SETSET
+determines (along with the analytical method) that there are 22441536 5-sets
+with no SETs, but as it is focused on 0-SET cases only, it does not divide the
+remaining $\binom{81}{5}-22441536=19261476$ 5-sets into 3116880 with 1 SET and
+63180 with 2 SETs (\SETSET search is pruned at whatever depth a first SET is
+encountered).
+
+\SETSET's analysis of the 0-SET problem is complete, in that it provides counts
+of 0-SET $k$-sets for $k$ up to 21 (at which point 0 SET cases are impossible).
+In particular, \SETSET provides a value of 2284535476080 SETless 12-sets, which
+our enumeration will match, as well as providing the number of 12-sets which
+have 1 SET, 2 SETs, etc.
 
 
 \section{Implementation}
@@ -163,7 +177,7 @@ the answers in a precomputed table.''  This is an immense computational savings
 compared to 4 sums and 4 modulo 3's for each SET determination, so that practice
 was adopted here as well.
 
-Sets of $k$ cards ('$k$-sets) are enumerated according to a combinatorial
+Sets of $k$ cards (`$k$-sets') are enumerated according to a combinatorial
 numbering system. In the first iteration of the enumeration program, each
 combination number from 0 to $\binom{81}{k}-1$ was fully `unranked' to a
 $k$-combination using the algorithm presented in \cite{WIKI}. In order to unrank
@@ -332,9 +346,16 @@ cannot have 10 or 11 SETs, and 11-sets cannot have 11 SETs.
 
 
 \section{Conclusion}
-Exhaustive enumeration of all sets of up to 12 \SETb cards is accomplished using
-highly-parallelized GPU programming, in a little over 100 hours. The
-implementation is described, and the results discussed.
+This paper improves on the speed of enumeration of starting deals for the card
+game \SET, to accomplish exhaustive enumeration for up to 12 cards, in a little
+over 4 days. As the marginal factor for extra time spent appears to be
+converging to about 7x for each additional card, the same hardware and software
+could enumerate 13, 14, and 15 cards should be about a month, 7 months, and 4
+years, respectively. To reach a complete analysis at 21 cards, computational
+power would have to grow by many orders of magnitude; or an analytical or
+non-exhaustive enumerative solution would have to be devised (perhaps along the
+lines of Donald Knuth's enumerations of just the 0-SET problem).
+
 
 
 \begin{thebibliography}{9} % 1-digit reference nums
@@ -360,6 +381,8 @@ implementation is described, and the results discussed.
 \bibitem{MAXCAP}Pellegrino, G., 1971. ``Sul massimo ordine delle calotte in
   $S_{4,3}$'' [{\em The maximal order of the shperical cap in $S_{4,3}$}], {\em
   Matematiche} {\bf 25}, pp 149-157.
+
+\bibitem{SET} SET Enterprises, Inc. \url{https://www.setgame.com}
 
 \bibitem{ME}Settergren, Reuben, 2019. \url{https://github.com/RubeRad/SET}
   
