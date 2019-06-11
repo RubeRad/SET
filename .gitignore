@@ -30,3 +30,16 @@
 *.exe
 *.out
 *.app
+
+# extra things to ignore
+.idea/
+knuth/
+*ark/
+*.csv
+*.ods
+*.aux
+*.log
+*.pdf
+*.png
+*~
+enumerate_deals

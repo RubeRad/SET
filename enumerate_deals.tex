@@ -4,6 +4,7 @@
 \usepackage{graphicx} % for png figures
 \usepackage{subcaption} % for subfigures
 \usepackage{xfrac} % for sfrac (slanted inline fractions)
+\usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage[yyyymmdd]{datetime}
 \renewcommand{\dateseparator}{-}
@@ -335,13 +336,58 @@ you the 8 SETs in 9 cards.
 Between 8 and 12 SETs though, no intermediate number of SETs is possible for 9
 cards.
 
-Every occurrence of a gap for $k$ cards is followed by a gap that is smaller by
-one in $k+1$ cards. 
+Every occurrence of a gap for $k$ cards is followed by a gap in the $k+1$ cards
+series that is smaller by one.
 
+\begin{figure}[!htb]
+  \center{\includegraphics[width=\textwidth]{cols.png}}
+  \caption{\label{FIGROWS} Each curve is one number of SETs (table row); x is
+    deal size, y is probability}
+\end{figure}
 
-That gap carries forward (diminishing) in that 10- and 11-sets can also
-have 12 SETs (planes plus 1 or 2 cards that complete no new SET), but 10-sets
-cannot have 10 or 11 SETs, and 11-sets cannot have 11 SETs.
+\begin{figure}[!htb]
+  \center{\includegraphics[width=\textwidth]{rows.png}}
+  \caption{\label{FIGCOLS} Each curve is one deal size (table column); x is
+    number of SETs, y is probability}
+\end{figure}
+
+Figures \ref{FIGROWS} and \ref{FIGCOLS} graph the tabular data by rows and by
+columns, and also demonstrate some interesting features. Both graphs normalize
+the tabular data into probabilities (dividing by $\binom{81}{k}$), otherwise
+each deal size would have numbers of such different orders of magnitude that the
+data would not be visually comparable.
+
+In Figure \ref{FIGROWS}, each curve represents the probability of a certain
+number of SETs (one row of the table). The horizontal axis is the number of
+cards dealt, and the vertical axis is probability. The 0 SETs curve starts at
+$84240/85320\approx 98.7\%$ for 3 cards, and only decreases as more cards are
+dealt. If the graph were extended to a deal size of $k=21$, the 0 SETs curve
+would reach $0\%$ exactly, but within this range it decreases at $k=12$ to
+$2284535476080/70724320184700\approx 3.23\%$ (the figure of most interest to
+players of \SET).
+
+The 1-SET curve shows that the probability of exactly 1 SET increases for a
+while are more cards are dealt, but peaks at $k=9$, and then falls off as it
+becomes more likely that 2 or more SETs will occur. The 2 SET curve peaks at
+$k=11$. The 3 SET curve reaches its maximum within this range at $k=12$, it is
+not obvious whether it peaks there or continues to rise, but non-exhaustive
+random sampling simulation would determine that pretty quickly.
+
+(Some of the interesting smaller probabilities cannot be discerned from this
+linear scale graph, TBD log scale graph shows more interesting features.)
+
+Figure \ref{FIGCOLS} graphs each column of the table as one curve. The
+horizontal axis is number of SETS, and the vertical axis is again
+probability. The $k=3$ curve (highest on the left) and $k=4$ curves have only
+two datapoints each, as the only possibilities for those cases are 0 SETs or 1
+SET. $k=5$ introduces the possibility of two SETs, and thus a third data
+point. At $k=9$ is the smallest deal size for which 0 SETs is not the most
+likely outcome. For $k=12$ of interest to players of \SET, the most likely
+occurrences are 3 SETs at 27.25\%, and 2 SETs almost 26.10\%, together
+accounting for a small majority of 12-card deals.
+
+(Interesting smaller probabilities shown in log graph, as well as removing
+points for gaps)
 
 
 
