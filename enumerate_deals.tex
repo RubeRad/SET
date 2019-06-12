@@ -16,8 +16,8 @@
 \newcommand{\SET}{SET\texttrademark}  % this one has no space, so it can be
                                       % followed by a comma or period
 
-\newcommand{\SETSET}{  {\sc setset} }
-\newcommand{\SETSETA}{ {\sc setset-all} }
+\newcommand{\SETSET}{{\sc setset}}
+\newcommand{\SETSETA}{{\sc setset-all}}
 
 \begin{document}
 
@@ -51,28 +51,31 @@ attribute (number, texture, color, shape) has 3 possible values, for a total of
 $3^4=81$ cards. A `SET' is defined as a set\footnote{A note on terminology:
   \SETb will refer to the card game, `SET' will refer to a SET according to the
   rules of the game, and 'set' will take its normal mathematical sense of an
-  unordered collection.} of 3 cards for which are either all the same, or all
-different, in each attribute. As such, the card game is equivalent to the finite
-geometry AG(4,3) (4 dimensions, 3 values); cards are analogous to points, and
-SETs are lines (sets of collinear points).
+  unordered collection. A $k$-set (or for instance 5-set or 12-set) will refer
+  to a set of $k$ cards.} of 3 cards for which all attributes are either all the
+same, or all different. A fundamentally important fact about SETs is that, for
+any two distinct cards, there is a unique third card which completes a SET with
+them. To find it, set each attribute of the third card appropriately: if the
+first two cards have the attribute the same, set the third the same; if they are
+different, set the third card's attribute different.
 
-Extending the geometric analogy, just as 3 non-collinear points determine a
-plane (and all the lines between points in the plane lie in the plane), a
-'plane' in \SETb can be built from 3 cards which do not form a SET, by adding
-cards which form SETs with 2 previous cards. Closure will be reached at 9 cards,
-at which point for any two cards, the third card which completes a SET with them
-will also be present. The number of SETs in a plane is 12. See \cite{JOS} for
-extensive discussion of planes, hyperplanes, and the relationship between \SETb
-and affine geometry in general.
+The card game is equivalent to the finite geometry AG(4,3) (4 dimensions, 3
+values); cards are analogous to points, and SETs are lines (sets of collinear
+points). And just as (in many [all?] geometries) 3 non-collinear points
+determine a plane, a `plane' in \SETb can be built from 3 cards which do not
+form a SET, by repeatedly adding cards which form SETs with 2 previous
+cards. Closure will be reached at 9 cards, at which point all pairs of cards
+will have their SET-mate. The number of SETs in a plane is 12. See \cite{JOS}
+for extensive discussion of planes, hyperplanes, and the relationship between
+\SETb and affine geometry in general.
 
-Another equivalent formulation, is that cards are 4-tuples from the set
+Another equivalent formulation is that cards are 4-tuples from the set
 $\{0,1,2\}^4$, and a SET is three cards such that their sum is $\equiv (0,0,0,0)
 \pmod 3$. Even more briefly, the 4-tuples can be represented by 4-digit numbers
 in base 3; the 81-cards in the \SETb deck are represented by ternary numbers
-0000, 0001, 0002, 0010, \ldots 2222. A fundamentally important fact about SETs
-is that, for any two distinct cards, there is a unique third card which
-completes a SET with them. To find it, set each attribute/digit of the third
-card appropriately so that each digit sum is $\equiv 0 \pmod 3$.
+0000, 0001, 0002, 0010, \ldots 2222. For any two cards, their unique SET-mate
+can be found by choosing each attribute/digit so that the digit sum is $\equiv 0
+(\pmod 3)$.
 
 The rules of \SETb specify that a game begins by dealing 12 cards. As long as no
 SET is present, 3 more cards are dealt. So the question naturally arises, what
@@ -81,22 +84,23 @@ is the probability that 12 cards have no SET? Or more generally, {\bf What is
   contain?} That is the question addressed by this work.
 
 If the initial deal has no SETs, additional cards are dealt (three at a time)
-until a SET is found. How far could this process go? It is known that the
-largest possible collection of cards with no SET is 20, so in the vanishingly
-unlikely case that a game of SET reaches 21 cards, there will definitely be a
-SET. It turns out that this question was answered before the game of \SETb was
-invented. The affine geometry analogue of a maximal collection of SET cards with
-no SET is called a `maximal cap', and in 1971 it was proven that the size of
-maximal caps in AG(4,3) is 20 \cite{MAXCAP}. This provides a useful bound for
-how far to extend analysis of how many cards contain how many SETs; larger
-numbers of cards can never occur in a (well-played) game of \SET.
+until a SET is found. How far could this process go? It turns out that this
+question was answered before the game of \SETb was invented. The affine geometry
+analogue of a maximal collection of SET cards with no SET is called a `maximal
+cap', and in 1971 it was proven that the size of maximal caps in AG(4,3) is 20
+\cite{MAXCAP}. Since the largest possible collection of cards with no SET is 20,
+in the vanishingly unlikely case that a game of SET reaches 21 cards, there will
+definitely be a SET.  This provides a useful bound for how far to extend
+analysis of how many cards contain how many SETs; larger numbers of cards can
+never occur in a (well-played) game of \SET.
 
 \section{Previous Results}
-A complete enumeration must consider $\binom{81}{12} \approx 7\times 10^{13}$
-cases. McMahon, Gordon et al note (\cite{JOS} p.~259) that, even though their
-computer program can process about 100 million deals per hour, a complete
-enumeration would still take 80 years. Enumeration, they note, ``might be
-feasible with streamlined code and faster machines or parallel processing.''
+A complete enumeration of all 12-card sets must consider $\binom{81}{12} \approx
+7\times 10^{13}$ cases. McMahon, Gordon et al note (\cite{JOS} p.~259) that,
+even though their computer program can process about 100 million deals per hour,
+a complete enumeration would still take 80 years. Enumeration, they note,
+``might be feasible with streamlined code and faster machines or parallel
+processing.''
 
 Donald Knuth tackled the more specific problem of counting how many deals have 0
 SETs. Knuth achieves tremendous speedup over exhaustive enumeration by using
@@ -106,7 +110,9 @@ find SETless $k$-sets, \SETSET \cite{SETSET}.
 For instance, using the 4-digit ternary representation, the first 1-card deal is
 $\{0000\}$. Trivially, that 1-card set does not contain a SET; but more
 importantly, every other single-card set also does not contain a set, by
-isomorphism with the first one. Because of this isomorphism, \SETSET was able to reject the other cards along with the first, as an isomorphism group altogether.
+isomorphism with the first one. Because of this isomorphism, \SETSET was able to
+reject the other cards along with the first, as an isomorphism group all
+together.
 
 \SETSET conducted a depth-first search of all sets of size up to 21, but was
 able to prune that search whenever:
@@ -118,9 +124,10 @@ able to prune that search whenever:
 In this way, \SETSET was able to count all the SETless sets within
 $\Sigma_{k=1}^{21}\binom{81}{k}\approx 2.04\times 10^{19}$ sets, by inspecting
 only $5.14\times 10^8$ cases, and avoiding inspection of isomorphic
-cases. Running \SETSET on a Core i7 ?? takes about four and a half hours.
+cases. Running \SETSET on a Core i7 2.7GHz processor takes about four and a half
+hours.
 
-The `secret sauce` of \SETSET is in what 'isomorphic' means, and how to
+The `secret sauce' of \SETSET is in what `isomorphic' means, and how to
 determine whether one set is isomorphic to another. Five years later (in an
 improved solution called \SETSETA \cite{SETSET-ALL}), Knuth realized he could
 expand the sense of the isomorphisms, thus increasing the size of the
@@ -130,29 +137,31 @@ for sets of size $k=4$, \SETSETA dealt with only 2. In total, \SETSETA dealt
 with only 9606 isomorphism groups, and thus had drastically improved speed,
 reaching the same answers as \SETSET in just 3m45s (on the same hardware).
 
-For 3 and 4 cards, the only posibilities are 0 SETs, or 1 SET, so the 0-SET
-counts from \SETSET are complete, in the sense that the 1-SET counts can be
-obtained by subtracting from $\binom{81}{k}$. But with the addition of a 5th
-card, it becomes possible to have 0, 1, or 2 SETs. \SETSET determines (as does
-direct analysis) that there are 22441536 5-sets with 0 SETs, but as \SETSET is
-focused on 0-SET cases only, and prunes its search as soon as a first SET is
-encountered, it does not divide the remaining $\binom{81}{5}-22441536=3180060$
-5-sets into how many have 1 SET or 2 SETs. Combinatorial analysis is able to
-determine that the 3180060 divides up as 3116880 with 1 SET and 63180 with 2
-SETs (\cite{JOS}, pp.~56-58). But as $k$ grows, combinatorial analysis grows
-infeasibly complex.
+For 3 and 4 cards, the only posibilities are 0 SETs, or 1 SET, so a complete
+picture can be obtained by subtracting the 0-SET counts from
+$\binom{81}{k}$. But with the addition of a 5th card, it becomes possible to
+have 0, 1, or 2 SETs. \SETSET counts (as does direct combinatorial analysis)
+that there are 22441536 5-sets with 0 SETs, but since \SETSET prunes its search
+as soon as a first SET is encountered, it does not divide the remaining
+$\binom{81}{5}-22441536=3180060$ 5-sets into how many have 1 SET or 2
+SETs. Combinatorial analysis is able to determine that the 3180060 divides up as
+3116880 with 1 SET and 63180 with 2 SETs (\cite{JOS}, pp.~56-58). This
+combinatorial analysis, however cannot be extended all the way to $k=12$,
+because the analysis grows infeasibly complex.
 
 \SETSET's analysis of the 0-SET problem is complete, in that it provides counts
-of 0-SET $k$-sets for $k$ up to 21 (at which point 0 SET cases are impossible).
-In particular, \SETSET provides a value of 2284535476080 SETless 12-sets, which
-our enumeration will match, as well as providing the number of 12-sets which
-have 1 SET, 2 SETs, etc.
+of 0-SET $k$-sets for $k$ up to 21, and \cite{MAXCAP} guarantees that for
+$k>=21$ there are no more SETless sets. The numbers of SETless sets for
+$k=3\ldots 12$ provide useful benchmarks for verifying this work, giving
+confidence in the correctness of the counts for the number of sets with 1 SET, 2
+SETs, etc. In particular our enumeration will match the \SETSET result of
+2284535476080 SETless 12-sets, which is of interest to \SETb enthusiasts.
 
 
 \section{Implementation}
 This paper picks up the implicit challenge of McMahon and Gordon to code the
 12-card enumeration with streamlined code and parallel processing (although not
-necessarily faster machines). Source code is available on github \cite{ME}. The
+necessarily faster machines). Source code is available on GitHub \cite{ME}. The
 code can be run serially, or in parallel using threads or OpenCL \cite{OPENCL}
 kernels. Note that OpenCL can be configured so that its kernels can be
 parallelized onto either CPU or GPU resources.
@@ -164,23 +173,26 @@ the answers in a precomputed table.''  This is an immense computational savings
 compared to 4 sums and 4 modulo 3's for each SET determination, so that practice
 was adopted here as well.
 
-Sets of $k$ cards (`$k$-sets') are enumerated according to a combinatorial
-numbering system. In the first iteration of the enumeration program, each
-combination number from 0 to $\binom{81}{k}-1$ was fully `unranked' to a
-$k$-combination using the algorithm presented in \cite{WIKI}. In order to unrank
-an combinatorial number $N$ into $k$ specific cards, the algorithm requires, for
-each of the $k$ cards, a number of comparisons to $\binom{n}{k}$, for $n\le 81,
-k\le 12$. To avoid $O(k)$ computation each for each binomial coefficient, those
-values were also precomputed and stored in a lookup table. The number of lookups
-of $\binom{n}{k}$ required to unrank a particular number $N$ varies. The fixed
-number of 81 cards establishes a generous upper bound on the possible number of
-lookups per card being unranked, and the minimum number of steps is 1. Since the
-number of steps for each of the $k$ cards is betwen 1 and 81, the complexity of
-this unranking algorithm is $O(k)$. The code was temporarily instrumented to
-count steps, and it was empirically determined that the constant for this linear
-complexity (the average number of $\binom{n}{k}$ lookups for unranking a
-$k$-set) is $C\approx 45$. (This could be improved by switching the incremental
-searching of the binomial table to binary searching, but the need for
+Sets of $k$ cards are enumerated according to a combinatorial numbering
+system. The forward sense of combinatorial numbering computes, for any
+particular $k$-set, where it 'ranks' in the enumeration of all $\binom{81}{k}$
+$k$-sets. The inverse process starts with an enumeral number $N$, and 'unranks'
+it into the $k$-set which occupies that place in the numbering system. The first
+iteration of the program used the unranking algorithm presented in
+\cite{WIKI}. In order to unrank a combinatorial number $N$ into $k$ specific
+cards, the algorithm requires, for each of the $k$ cards, a number of
+comparisons to $\binom{n}{k}$, for $n\le 81, k\le 12$. To avoid $O(k)$
+computation each for each binomial coefficient, those values were also
+precomputed and stored in a lookup table.
+
+The number of lookups of $\binom{n}{k}$ required to unrank a particular number
+$N$ into a $k$-set varies. The fixed number of 81 cards establishes an upper
+bound on the possible number of lookups per card being unranked, so the
+complexity of this unranking algorithm is $O(k)$. The code was temporarily
+instrumented to empirically count the average number of steps, and it was
+determined that the constant for this linear complexity (the average number of
+$\binom{n}{k}$ lookups for unranking a $k$-set) is $C\approx 45$. (This could be
+improved by switching to a binary search of the binomial table, but the need for
 non-branching code (see immediately below) obviates this computational approach
 anyways.)
 
@@ -199,24 +211,23 @@ taken in the above unranking algorithm. Empirically, the speedup from switching
 to full unranking to incrementation was 2-3x (even serially).
 
 The goal for this paper was to enumerate 12-card deals, which requires
-enumeration of combinations numbered by integers as large as $\binom{81}{12}-1
+enumeration of combinations numbered by integers as large as $\binom{81}{12}
 \approx 7\times 10^{13}$. For this purpose, an unsigned 64-bit integer
 suffices. Fortunately, the latest advances in GPU technology have recently
 introduced native capabilty for 64-bit integer types. Also fortuitous is the
 fact that, since $2^{64} > \binom{81}{21}$, 64-bit unsigned integers suffice all
-the way up to deals of 21 cards, which is the same extent as Knuth's programs
-analyzed (since 20 is the size of the maximal cap -- there are configurations of
-20 cards without SETs, and $k=21$ is the minimal deal size for which the number
-of 0-SET deals is 0).
+the way up to deals of 21 cards (the natural limit for this analysis, since no
+game of \SETb can ever need more than 21 cards at once).
 
-This problem is `embarassingly parallel': counting the number of sets in any
-combination of cards is completely independent of any other. What's more, the
-input is merely a number (or two numbers defining a range), and the output a
-small array of accumulators, counting how many $k$-sets in the range have 0
-SETs, 1 SET, \ldots 14 SETs (it is known that 14 is the maximum number of SETs
-that can occur in 12 cards \cite{VINCI}). Each kernel can have its own small
-array of counters, to avoid write contention, and the counter arrays can be then
-quickly summed.
+This problem is `embarassingly parallel': the processing for any $k$-set, or
+consecutive range of $k$-sets, is completely independent, and the inputs and
+outputs are both independent and small. The input is merely an enumeral number
+(or two numbers defining a range), and the output a small array of accumulators,
+counting how many $k$-sets in the range have 0 SETs, 1 SET, \ldots 14 SETs (it
+is known that 14 is the maximum number of SETs that can occur in 12 cards
+\cite{VINCI}). Each kernel can have its own small array of counters, to avoid
+write contention, and the counter arrays can be then quickly summed. Doubling
+the available computing resources should halve the processing time.
 
 \section{Results}
 The exhaustive enumeration program was run for $3<=k<=12$. The results are
@@ -225,23 +236,21 @@ NVIDIA Quadro P4000. Non-rigorous trial and error determined that a decent
 setting for the GPU processing was to queue 5000 kernels at a time, each tasked
 with enumerating a batch of 10000 $k$-combinations.
 
-
-
 The 12-set enumeration took 90.1h=3.75d. The total time for $k=3\ldots 12$ was
 104.5h=4.35d. (Because of combinatorial explosion, the 12-card enumeration
 consumed the lion's share of processing.) The 12-card processing rate was 218M
-deals/second, and the overall rate was 226M/second (slightly higher because each
-$k<12$-combination required checking $\binom{k<12}{3}$ triples,
-etc). Single-threaded on a core i7 2.8GHz CPU (?), the 12-card enumeration ran
+deals/second, and the overall rate was 226M/second (slightly higher because for
+smaller $k$, the number of triples that need to be checked for each set is
+smaller). Single-threaded on a Core i7 2.7GHz CPU, the 12-card enumeration ran
 at 842K/s (projected exhaustive enumeration time 972d=2.66y). Thus GPU
-processing yielded a 218M/842k$\approx$256x speedup (at least comparing these specific
-processors). However, the Quadro P4000 has 1792 cores, so it seems possible that
-the GPU processing could be further optimized to obtain a 12-card enumeration
-time well under 24 hours. Enumeration for $k=13$ or maybe 14 may become
-worthwhile, but combinatorial explosion quickly wins again, as runtimes increase
-about 7x for each larger $k$. Perhaps Knuth's isomorphism rejection technique
-could be extended to counting not just 0-SET deals, making a complete
-enumeration of up to $k=81$ possible.
+processing yielded a 218M/842K$\approx$256x speedup (at least comparing these
+specific processors). However, the Quadro P4000 has 1792 cores, so it seems
+possible that the GPU processing could be further optimized to obtain a 12-card
+enumeration time well under 24 hours. Enumeration for $k=13$ or maybe 14 may
+become worthwhile, but combinatorial explosion quickly wins again, as runtimes
+increase about 7x for each larger $k$. Perhaps Knuth's isomorphism rejection
+technique could be extended to counting not just 0-SET deals, making possible
+exhaustive enumeration up to $k=21$ or possibly even $k=81$.
 
 \begin{table}
   \caption{Enumeration Results}\label{THE_TABLE}
@@ -298,25 +307,24 @@ A number of interesting features arise from the full pattern of counts. The
 value of 84240 shows up 4 times, 3032640 three times, and 160729920 twice. This
 invites questions such as, is there a meaningful bijection between the 9-sets
 with 5 SETs, and the 12-sets with 11 SETs? Or is it just a coincidence from
-reuse of the same prime factors?
+combinatorial reuse of the same prime factors?
 
 
 There are a number of gaps in the table indicating impossible numbers of SETs
-for some set sizes. The first gap shows that 7 cards cannot have 1, 2, 3, or 5,
-but not exactly 4 SETs. Although there are 84240 6-sets with 3 SETs, there is no
-way to add a $7^{th}$ card and complete only one more SET.\footnote{And yet
-  there are 42120 7-sets with 5 SETs -- do they correspond with half of the
-  84240 3-SET 6-sets for a meaningful reason? Or do some of the result from
-  adding a card to a 6-set with fewer than 3 SETs, and completing more than 2
-  new SETs?}
+for some set sizes. The first gap shows that 7 cards can have 1, 2, 3, or 5
+SETs, but not exactly 4 SETs. Although there are 84240 6-sets with 3 SETs, there
+is no way to add a $7^{th}$ card and complete only one more SET.\footnote{And
+  yet there are 42120 7-sets with 5 SETs -- is there a meaningful correspondence
+  with half of the 84240 6-sets with 3 SETs?}
 
 The gaps in the 9-set enumeration are quite interesting. The 1170 9-sets with 12
-SETs are all possible planes (this matches the analytical result obtained in
-\cite{JOS}, p.~48). It is possible for 9 cards to have 8 SETs, as explained by
-Liz McMahon:\footnote{Co-author of \cite{JOS}, personal correspondence}
+SETs are the complete collection of all possible planes (this matches the
+analytical result obtained in \cite{JOS}, p.~48). It is possible for 9 cards to
+have 8 SETs, as explained by Liz McMahon:\footnote{Co-author of \cite{JOS},
+  personal correspondence}
 \begin{quote}
-If you take a plane [12 SETs] and remove one card, what’s left has 8 SETs.  You
-can then add another point that doesn’t complete any more SETs, and that gives
+If you take a plane [12 SETs] and remove one card, what's left has 8 SETs.  You
+can then add another point that doesn't complete any more SETs, and that gives
 you the 8 SETs in 9 cards.
 \end{quote}
 Between 8 and 12 SETs though, no intermediate number of SETs is possible for 9
@@ -345,17 +353,17 @@ data would not be visually comparable.
 
 In Figure \ref{FIGROWS}, each curve represents the probability of a certain
 number of SETs (one row of the table). The horizontal axis is the number of
-cards dealt, and the vertical axis is probability. The 0 SETs curve starts at
-$84240/85320\approx 98.7\%$ for 3 cards, and only decreases as more cards are
+cards dealt, and the vertical axis is probability. The curve for 0 SETs starts
+at $84240/85320\approx 98.7\%$ for 3 cards, and only decreases as more cards are
 dealt. If the graph were extended to a deal size of $k=21$, the 0 SETs curve
 would reach $0\%$ exactly, but within this range it decreases at $k=12$ to
 $2284535476080/70724320184700\approx 3.23\%$ (the figure of most interest to
 players of \SET).
 
 The 1-SET curve shows that the probability of exactly 1 SET increases for a
-while are more cards are dealt, but peaks at $k=9$, and then falls off as it
+while, as more cards are dealt; but it peaks at $k=9$, and then falls off as it
 becomes more likely that 2 or more SETs will occur. The 2 SET curve peaks at
-$k=11$. The 3 SET curve reaches its maximum within this range at $k=12$, it is
+$k=11$. The 3 SET curve reaches its maximum within this range at $k=12$. It is
 not obvious whether it peaks there or continues to rise, but non-exhaustive
 random sampling simulation would determine that pretty quickly.
 
@@ -364,13 +372,13 @@ linear scale graph, TBD log scale graph shows more interesting features.)
 
 Figure \ref{FIGCOLS} graphs each column of the table as one curve. The
 horizontal axis is number of SETS, and the vertical axis is again
-probability. The $k=3$ curve (highest on the left) and $k=4$ curves have only
-two datapoints each, as the only possibilities for those cases are 0 SETs or 1
+probability. The curves for $k=3$ (highest on the left) and $k=4$ have only two
+datapoints each, since the only possibilities for those cases are 0 SETs or 1
 SET. $k=5$ introduces the possibility of two SETs, and thus a third data
-point. At $k=9$ is the smallest deal size for which 0 SETs is not the most
-likely outcome. For $k=12$ of interest to players of \SET, the most likely
-occurrences are 3 SETs at 27.25\%, and 2 SETs almost 26.10\%, together
-accounting for a small majority of 12-card deals.
+point. $k=9$ is the smallest deal size for which 0 SETs is not the most likely
+outcome. For $k=12$ (of interest to players of \SET), the most likely
+occurrences are 3 SETs (27.25\%), and 2 SETs (26.10\%), together accounting for
+a small majority of 12-card deals.
 
 (Interesting smaller probabilities shown in log graph, as well as removing
 points for gaps)
@@ -380,13 +388,13 @@ points for gaps)
 \section{Conclusion}
 This paper improves on the speed of enumeration of starting deals for the card
 game \SET, to accomplish exhaustive enumeration for up to 12 cards, in a little
-over 4 days. As the marginal factor for extra time spent appears to be
-converging to about 7x for each additional card, the same hardware and software
-could enumerate 13, 14, and 15 cards should be about a month, 7 months, and 4
-years, respectively. To reach a complete analysis at 21 cards, computational
-power would have to grow by many orders of magnitude; or an analytical or
-non-exhaustive enumerative solution would have to be devised (perhaps along the
-lines of Donald Knuth's enumerations of just the 0-SET problem).
+over 4 days. As the marginal factor for extra time spent is about 7x for each
+additional card, the same hardware and software could enumerate 13, 14, and 15
+cards in about 1 month, 7 months, and 4 years, respectively. To reach a complete
+analysis at 21 cards, computational power would have to grow by many orders of
+magnitude; or an analytical or non-exhaustive enumerative solution would have to
+be devised (perhaps along the lines of Donald Knuth's
+isomorphism-rejection-based enumerations of the 0-SET problem).
 
 
 
