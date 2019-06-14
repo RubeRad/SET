@@ -4,6 +4,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 
+def zero2nan(haszeros):
+   hasnans = []
+   for num in haszeros:
+      if num==0: hasnans.append(np.nan)
+      else:      hasnans.append(num)
+   nans = list(np.isnan(hasnans))
+   while nans[-1]:
+      nans.pop()
+      hasnans.pop()
+   return hasnans
+
+
 listofrows = []
 for i in range(3):
    listofrows.append([0]*15)
@@ -42,13 +54,46 @@ for i in range(3,13):
 rowis = range(3,13)
 colis = range(0,15)
 
+labels1 = []
+for i in range(3, 13):
+   labels1.append('{} cards'.format(i))
+
+labels2 = ['0 SETs', '1 SET']
+for i in range(2,15):
+   labels2.append('{} SETs'.format(i))
+
+
 # plot each row as a line
+fix,ax = plt.subplots(2,1)
 for rowi in rowis:
-   plt.plot(colis, pcts[rowi, colis])
+   ys = zero2nan(pcts[rowi, :])
+   ax[0].plot(range(len(ys)), ys, '-o')
+ax[0].legend(labels1)
+#plt.show()
+
+# now log scale
+for rowi in rowis:
+   ys = zero2nan(pcts[rowi, :])
+   ax[1].semilogy(range(len(ys)), ys, '-o')
+ax[1].set_ylim([8.0e-10,1.8])
+ax[1].set_xlabel('Number of SETs')
+#plt.legend(labels1)
 plt.show()
 
+
+fig,ax = plt.subplots(2,1)
 for coli in colis:
-   plt.plot(rowis, pcts[rowis, coli])
+   ys = zero2nan(pcts[:, coli])
+   ax[0].plot(range(len(ys)), ys, '-o')
+ax[0].legend(labels2, prop={'size': 8})
+#plt.show()
+
+for coli in colis:
+   ys = zero2nan(pcts[:, coli])
+   ax[1].semilogy(range(len(ys)), ys, '-o') # how does this know X axis is 3... not 0...?
+ax[1].set_ylim([8.0e-10,1.8])
+ax[1].set_xlabel('Number of cards')
+#plt.legend(labels2)
 plt.show()
 
 timex = [0]*4

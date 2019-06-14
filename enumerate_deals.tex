@@ -6,6 +6,7 @@
 \usepackage{xfrac} % for sfrac (slanted inline fractions)
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage[super]{nth}
 \usepackage[yyyymmdd]{datetime}
 \renewcommand{\dateseparator}{-}
 \usepackage{amsaddr} % addresses up front
@@ -17,7 +18,9 @@
                                       % followed by a comma or period
 
 \newcommand{\SETSET}{{\sc setset}}
+\newcommand{\SETSETb}{{\sc setset }}
 \newcommand{\SETSETA}{{\sc setset-all}}
+\newcommand{\SETSETAb}{{\sc setset-all }}
 
 \begin{document}
 
@@ -29,6 +32,9 @@
 \thanks{Thanks to Liz McMahon and Gary Gordon of Lafayette College for helpful
   correspondence during the development of this capability, as well as for
   writing the delightful book {\em The Joy of Set} \cite{JOS}.}
+
+\thanks{Thanks also to the 6-\nth{7} grade Math Discovery Club at The Cambridge
+  School (\url{cambridgeclassical.org}, who set me off on this journey.}
 
 \maketitle
 
@@ -105,43 +111,43 @@ processing.''
 Donald Knuth tackled the more specific problem of counting how many deals have 0
 SETs. Knuth achieves tremendous speedup over exhaustive enumeration by using
 ``isomorph rejection'' (i.e. `streamlined code'). Knuth called his program to
-find SETless $k$-sets, \SETSET \cite{SETSET}. 
+find SETless $k$-sets, \SETSETb \cite{SETSET}. 
 
 For instance, using the 4-digit ternary representation, the first 1-card deal is
 $\{0000\}$. Trivially, that 1-card set does not contain a SET; but more
 importantly, every other single-card set also does not contain a set, by
-isomorphism with the first one. Because of this isomorphism, \SETSET was able to
+isomorphism with the first one. Because of this isomorphism, \SETSETb was able to
 reject the other cards along with the first, as an isomorphism group all
 together.
 
-\SETSET conducted a depth-first search of all sets of size up to 21, but was
+\SETSETb conducted a depth-first search of all sets of size up to 21, but was
 able to prune that search whenever:
 \begin{itemize}
 \item Adding another card to the previous introduces a SET, or
 \item Adding another card forms a set which is isomorphic to a
   previously-accounted for SETless set.
 \end{itemize}
-In this way, \SETSET was able to count all the SETless sets within
+In this way, \SETSETb was able to count all the SETless sets within
 $\Sigma_{k=1}^{21}\binom{81}{k}\approx 2.04\times 10^{19}$ sets, by inspecting
 only $5.14\times 10^8$ cases, and avoiding inspection of isomorphic
-cases. Running \SETSET on a Core i7 2.7GHz processor takes about four and a half
+cases. Running \SETSETb on a Core i7 2.7GHz processor takes about four and a half
 hours.
 
-The `secret sauce' of \SETSET is in what `isomorphic' means, and how to
+The `secret sauce' of \SETSETb is in what `isomorphic' means, and how to
 determine whether one set is isomorphic to another. Five years later (in an
-improved solution called \SETSETA \cite{SETSET-ALL}), Knuth realized he could
+improved solution called \SETSETAb \cite{SETSET-ALL}), Knuth realized he could
 expand the sense of the isomorphisms, thus increasing the size of the
 isomorphism groups, and decreasing their number, which decreases the number of
-cases to consider. For instance, while \SETSET considered 128 isomorphism groups
-for sets of size $k=4$, \SETSETA dealt with only 2. In total, \SETSETA dealt
+cases to consider. For instance, while \SETSETb considered 128 isomorphism groups
+for sets of size $k=4$, \SETSETAb dealt with only 2. In total, \SETSETAb dealt
 with only 9606 isomorphism groups, and thus had drastically improved speed,
-reaching the same answers as \SETSET in just 3m45s (on the same hardware).
+reaching the same answers as \SETSETb in just 3m45s (on the same hardware).
 
 For 3 and 4 cards, the only posibilities are 0 SETs, or 1 SET, so a complete
 picture can be obtained by subtracting the 0-SET counts from
 $\binom{81}{k}$. But with the addition of a 5th card, it becomes possible to
-have 0, 1, or 2 SETs. \SETSET counts (as does direct combinatorial analysis)
-that there are 22441536 5-sets with 0 SETs, but since \SETSET prunes its search
+have 0, 1, or 2 SETs. \SETSETb counts (as does direct combinatorial analysis)
+that there are 22441536 5-sets with 0 SETs, but since \SETSETb prunes its search
 as soon as a first SET is encountered, it does not divide the remaining
 $\binom{81}{5}-22441536=3180060$ 5-sets into how many have 1 SET or 2
 SETs. Combinatorial analysis is able to determine that the 3180060 divides up as
@@ -154,7 +160,7 @@ of 0-SET $k$-sets for $k$ up to 21, and \cite{MAXCAP} guarantees that for
 $k>=21$ there are no more SETless sets. The numbers of SETless sets for
 $k=3\ldots 12$ provide useful benchmarks for verifying this work, giving
 confidence in the correctness of the counts for the number of sets with 1 SET, 2
-SETs, etc. In particular our enumeration will match the \SETSET result of
+SETs, etc. In particular our enumeration will match the \SETSETb result of
 2284535476080 SETless 12-sets, which is of interest to \SETb enthusiasts.
 
 
@@ -225,9 +231,10 @@ outputs are both independent and small. The input is merely an enumeral number
 (or two numbers defining a range), and the output a small array of accumulators,
 counting how many $k$-sets in the range have 0 SETs, 1 SET, \ldots 14 SETs (it
 is known that 14 is the maximum number of SETs that can occur in 12 cards
-\cite{VINCI}). Each kernel can have its own small array of counters, to avoid
-write contention, and the counter arrays can be then quickly summed. Doubling
-the available computing resources should halve the processing time.
+\cite{VINCI}, \cite{JOS} p.~281). Each kernel can have its own small array of
+counters, to avoid write contention, and the counter arrays can be then quickly
+summed. Doubling the available computing resources should halve the processing
+time.
 
 \section{Results}
 The exhaustive enumeration program was run for $3<=k<=12$. The results are
@@ -334,13 +341,13 @@ Every occurrence of a gap for $k$ cards is followed by a gap in the $k+1$ cards
 series that is smaller by one.
 
 \begin{figure}[!htb]
-  \center{\includegraphics[width=\textwidth]{cols.png}}
+  \center{\includegraphics[width=\textwidth]{nSET_curves.png}}
   \caption{\label{FIGROWS} Each curve is one number of SETs (table row); x is
     deal size, y is probability}
 \end{figure}
 
 \begin{figure}[!htb]
-  \center{\includegraphics[width=\textwidth]{rows.png}}
+  \center{\includegraphics[width=\textwidth]{kset_curves.png}}
   \caption{\label{FIGCOLS} Each curve is one deal size (table column); x is
     number of SETs, y is probability}
 \end{figure}
