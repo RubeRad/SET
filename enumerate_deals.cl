@@ -13,7 +13,7 @@ typedef cl_ulong BigInt; // cl_ulong is unsigned __int64 in cl_platform.h
 typedef cl_ushort SmaInt;
 
 #define NUM_CARDS  81 // 3^4 for 4 attributes of 3 values
-#define MAX_DEAL   12 // if technology permits this might be increased
+#define MAX_DEAL   21 // if technology permits this might be increased
 #define NUM_COUNTS 23 // internet sez max SETs in 12 cards is 22
 
 #if DEVICE_CODE

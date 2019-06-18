@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include <numeric>
 #ifndef WINDOZE
 #include <unistd.h> // for sleep(seconds)
 #endif
@@ -34,14 +35,22 @@ using std::vector;
 
 
 // Used to populate CHOOSE[][] up front, then hopefully never again
+//               n * (n-1) * (n-2) * ...     n   n-1   n-2
+// n choose k = ------------------------- =  - * --- * --- * ...
+//               1 *   2   *   3   * ...     1    2     3
 BigInt combinations(SmaInt n, SmaInt k) {
-  if (n<k)  return 0; // base cases
-  if (k==0) return 0;
-  if (k==1) return n;
+  if (n<k)  return 0; // error
+  if (k==0 || k==n)   return 1; // trivial cases
+  if (k==1 || k==n-1) return n;
   BigInt C=1;
   for (SmaInt i=0; i<k; ++i) {
-    C *= n-i; // careful order of multiplication/division
-    C /= i+1; // ensures we always have an integer
+    // divide before multiplying to avoid overflow
+    // remove gcd to ensure division can remain integer
+    auto gcd = std::gcd(n-i, i+1);
+    auto mlt = (n-i)/gcd;
+    auto div = (i+1)/gcd;
+    C /= div;
+    C *= mlt;
   }
   return C;
 }
@@ -260,7 +269,16 @@ bool has_a_set(const deal_type& d, SmaInt kay) {
   }
 
 void self_test() {
-  ASSERT_EQ(combinations(81,12), 70724320184700, "C(81,12)");
+  ASSERT_EQ(combinations(81,12),       70724320184700u, "C(81,12)");
+  ASSERT_EQ(combinations(81,13),      375382930211100u, "C(81,13)");
+  ASSERT_EQ(combinations(81,14),     1823288518168200u, "C(81,14)");
+  ASSERT_EQ(combinations(81,15),     8144022047817960u, "C(81,15)");
+  ASSERT_EQ(combinations(81,16),    33594090947249085u, "C(81,16)");
+  ASSERT_EQ(combinations(81,17),   128447994798305325u, "C(81,17)");
+  ASSERT_EQ(combinations(81,18),   456703981505085600u, "C(81,18)");
+  ASSERT_EQ(combinations(81,19),  1514334254464231200u, "C(81,19)");
+  ASSERT_EQ(combinations(81,20),  4694436188839116720u, "C(81,20)");
+  ASSERT_EQ(combinations(81,21), 13636219405675529520u, "C(81,21)");
 
   for (SmaInt a=0; a<NUM_CARDS; ++a)
     for (SmaInt b=0; b<NUM_CARDS; ++b)

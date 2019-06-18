@@ -2,7 +2,7 @@
 #CLLIB = /opt/AMDAPPSDK-3.0/lib/x86_64
 #CLINC = /opt/OpenCL-Headers
 #CLLIB = /usr/lib/x86_64-linux-gnu
-CXXFLAGS =             #-I$(CLINC) -L$(CLLIB)
+CXXFLAGS = -std=c++17            #-I$(CLINC) -L$(CLLIB)
 
 all: enumerate_deals
 
