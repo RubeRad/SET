@@ -62,14 +62,14 @@ labels2 = ['0 SETs', '1 SET']
 for i in range(2,15):
    labels2.append('{} SETs'.format(i))
 
-
 # plot each row as a line
 fix,ax = plt.subplots(2,1)
 for rowi in rowis:
    ys = zero2nan(pcts[rowi, :])
    ax[0].plot(range(len(ys)), ys, '-o')
-ax[0].legend(labels1)
+ax[0].legend(labels1, prop={'size': 14}, loc=(1.01, -0.3))
 #plt.show()
+
 
 # now log scale
 for rowi in rowis:
@@ -78,14 +78,16 @@ for rowi in rowis:
 ax[1].set_ylim([8.0e-10,1.8])
 ax[1].set_xlabel('Number of SETs')
 #plt.legend(labels1)
+plt.subplots_adjust(left=.03, bottom=.03, right=0.9, top=0.99, wspace=0, hspace=0.1)
+#mng = plt.get_current_fig_manager()
+#mng.window.showMaximized()
 plt.show()
-
 
 fig,ax = plt.subplots(2,1)
 for coli in colis:
    ys = zero2nan(pcts[:, coli])
    ax[0].plot(range(len(ys)), ys, '-o')
-ax[0].legend(labels2, prop={'size': 8})
+ax[0].legend(labels2, prop={'size': 14}, loc=(1.01, -0.5))
 #plt.show()
 
 for coli in colis:
@@ -94,7 +96,11 @@ for coli in colis:
 ax[1].set_ylim([8.0e-10,1.8])
 ax[1].set_xlabel('Number of cards')
 #plt.legend(labels2)
+plt.subplots_adjust(left=.03, bottom=.03, right=0.9, top=0.99, wspace=0, hspace=0.1)
+#mng = plt.get_current_fig_manager()
+#mng.frame.Maximize(True)
 plt.show()
+exit(0)
 
 timex = [0]*4
 for i in range(4,13):
