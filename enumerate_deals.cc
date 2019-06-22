@@ -6,6 +6,8 @@
 #include <vector>
 #include <algorithm>
 #include <numeric>
+#include <random>
+#include <functional>
 #ifndef WINDOZE
 #include <unistd.h> // for sleep(seconds)
 #endif
@@ -568,10 +570,21 @@ void enumerate_serial(SmaInt k,
   double seconds0;
   restore_state(k, N0, seconds0, TOTAL_COUNTS, fname);
 
+#ifdef RANDO
+  std::mt19937_64::result_type seed = time(0);
+  auto randy = std::bind(
+     std::uniform_int_distribution<unsigned long>(0, NUM_DEALS-1),
+     std::mt19937_64(seed));
+#endif
+
   deal_type d;
   double t0 = clock(), tot_seconds, new_seconds;
   for (BigInt N=N0; N<NUM_DEALS; ++N) {
+#ifdef RANDO
+    unrank_deal_serial(randy(), k, &d);
+#else
     unrank_deal_serial(N, k, &d);
+#endif
     SmaInt nSETs = num_sets(&d, k);
     TOTAL_COUNTS[nSETs]++;
 
@@ -880,8 +893,22 @@ void *enumerate_1thread(void *t) {
   BigInt N0 = THREAD_BEGS[my_id];
   BigInt NN = THREAD_BEGS[my_id+1];
   //printf("my_id = %ld N0 = %ld NN = %ld\n", my_id, N0, NN);
+
+#ifdef RANDO
+  std::mt19937_64::result_type seed = N0;
+  BigInt NUM_DEALS = CHOOSE[NUM_CARDS][THREAD_CRDS];
+  auto randy = std::bind(
+     std::uniform_int_distribution<unsigned long>(0,NUM_DEALS-1),
+                         std::mt19937_64(seed));
+#endif
+
+  
   for (BigInt N=N0; N<NN; ++N) {
+#if RANDO
+    unrank_deal_serial(randy(), THREAD_CRDS, &d);
+#else
     unrank_deal_serial(N, THREAD_CRDS, &d);
+#endif
     SmaInt nSETs = num_sets(&d, THREAD_CRDS);
     //printf("my_id = %ld nSETs = %d\n", my_id, nSETs);
     THREAD_CNTS[my_id][nSETs]++;
@@ -995,6 +1022,13 @@ void enumerate_thread(SmaInt k,         // deal size
       print_projections(k, tot_seconds, DONE, MAX_SECONDS);
       break; // quit early because of requested time limit
     }
+#ifdef RANDO
+    if (DONE >= 1000000000u) {
+      dump_state(k, DONE, tot_seconds, TOTAL_COUNTS);
+      print_projections(k, tot_seconds, DONE, MAX_SECONDS);
+      break; // quit early because of requested time limit
+    }
+#endif
   }
    
   return;
