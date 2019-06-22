@@ -1,0 +1,8 @@
+name: copied-from-mybinder-org
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - numpy
+  - pip:
+    - matplotlib
