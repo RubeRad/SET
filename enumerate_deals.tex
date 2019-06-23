@@ -244,6 +244,7 @@ then quickly summed. Doubling the available computing resources should halve the
 processing time.
 
 \section{Results}
+\subsection{Exhaustive Enumeration}
 \EDb was run for $3<=k<=12$. The results are presented in Table
 \ref{THE_TABLE}. Runtimes are for GPU processing on an NVIDIA Quadro
 P4000. Non-rigorous trial and error determined that a decent setting for the GPU
@@ -389,9 +390,11 @@ players of \SET).
 The 1 SET curve shows that the probability of exactly 1 SET increases for a
 while, as more cards are dealt; but it peaks at $k=9$, and then falls off as it
 becomes more likely that 2 or more SETs will occur. The 2 SET curve peaks at
-$k=11$. The 3 SET curve reaches its maximum within this range at $k=12$. It is
-not obvious whether it peaks there or continues to rise, but non-exhaustive
-random sampling simulation would determine that pretty quickly.
+$k=11$. The 3 SET curve reaches its maximum within this range at $k=12$. The
+random-sampling results of the next section indicate that 12 cards is indeed the
+peak probability for 3 SETs.\footnote{The probability of 3 SETs in 12 cards is
+  exactly $19278240770880/\binom{81}{12}\approx 0.2726$, and the sampled
+  probability of 3 SETs in 13 cards is $246100265/10^9\approx 0.2461$.}
 
 Some of the interesting smaller probabilities cannot be discerned from a linear
 scale graph, so the bottom graph in Figure \ref{FIGROWS} reproduces the results
@@ -417,6 +420,99 @@ however, reveals the structure at smaller probabilities. In particular, note
 that the column-gaps are evident as gaps in the 7--11-card curves. The 9-card
 curve is the only one with two gaps.
 
+It is also interesting to note that, corresponding to every gap in Figure
+\ref{FIGCOLS}, the subsequent curve 'sags' into that gap. For instance, the
+7-card curve has its gap at 4 SETs, and the 8-card curve has a deflection
+downwards at 4 SETs. (So just as the probability of 4 SETs in 7 cards is smaller
+than expected (small all the way down to 0!), the probability of 4 SETs in 8
+cards is also a little smaller than expected). Similar deflections are apparent
+in the 10-card curve above the 8- and 9-card gap at 7 SETs\footnote{This major
+  deflection in the 10-card curve seems also to be echoed in the 11-card curve
+  at 8 SETs, and the 12-card curve at 9 SETs.}, and in the 12-card curve above
+the 9- and 10-card gap at 11 SETs.
+
+\begin{figure}[!htb]
+  \center{\includegraphics[width=\textwidth]{nSET_curves_full.png}}
+  \caption{\label{FIGROWSFULL} Each curve is one number of SETs; x is deal size
+    (extended to include randomly-sampled $k=13\ldots 21$), y is probability}
+\end{figure}
+
+\begin{figure}[!htb]
+  \center{\includegraphics[width=\textwidth]{kset_curves_full.png}}
+  \caption{\label{FIGCOLSFULL} Each curve is one deal size (randomly sampled $k>12$
+    are dashed lines); x is number of SETs, y is probability}
+\end{figure}
+
+\subsection{Random Sampling}
+In addition to the complete enumerations of numbers of sets for $k=3\ldots 12$,
+\EDb can be run in a randomom-sampling. For $k=13\ldots 21$, \EDb was run over
+($10^9$ (one billion) randomly-sampled deals of size $k$. Figures
+\ref{FIGROWSFULL} and \ref{FIGCOLSFULL} extend Figures \ref{FIGROWS} and
+\ref{FIGCOLS} by adding the randomly-sampled results. Note that, in the
+log-scale graphs, the bottom two light gray lines mark probabilities of $10^9$
+and $10^8$ (i.e. 1 or 10 samples encountered in the sample size of 1 billion). 
+
+Since these extended results are subject to sampling error, they are not
+provided in full here in this article, but they can be examined in the file {\tt
+  enumerate\_deals.csv} on github \cite{ME}. With a sample size of $10^9$, all
+probabilities below $10^8$ are certainly suspect. Table \ref{LOTSASETS} details
+the samples exhibiting at least 30 SETs. It is beyond the scope of this paper to
+quantify the statistical significance or margin of error of these sampled
+values, but certainly the smallest values exhibit the largest amount of
+uncertainty.
+
+\begin{table}
+  \caption{Occurrences of $\ge 30$ SETs (from sample size of $10^9$ per $k$)}
+  \label{LOTSASETS}
+  \centering
+  \begin{tabular}{r | r r r r r r r r r r r r r r r r r }
+    SETs    & 30&31&32&33&34&35&36&37&38&39&40&41&42&43&44&45&46 \\
+    \hline
+    17 cards& 1\\
+    18 cards& 3 & 1 & 1\\
+    19 cards& 55&8&8&7&6\\
+    20 cards& 736 & 297 & 60 & 51 & 37 & 23 & 2 & & 1 \\
+    21 cards& 10043 & 4115 & 1607 & 663 & 329 & 181 & 86 & 20 & 4 & 11 & 10 & 1 &&&&& 1
+  \end{tabular}
+\end{table}
+
+The first interesting note about Figure \ref{FIGROWSFULL} is that the $k=20$
+curve begins at 2 SETs. As discussed before, there are 'maximal caps' of 20
+cards that contain 0 SETs, but their probability is so small that the sample of
+$10^9$ did not encounter any. Indeed, \SETSETb tells us there are exactly 632344
+SETless 20-sets, so the probability of encountering one randomly is
+$632344/\binom{81}{20}\approx1.347\times 10^{-13}$. And since there exist
+20-sets with 0 SETS, there exist also 19-sets with 0 SETs (just remove any of
+the 20 cards), but the random sample was also not large enough to encounter
+any by chance.
+
+For $k=21$, 13 out of $10^9$ deals had 4 SETs, but no deals (in the sample) had
+fewer SETs. We know there can be no occurrences of 0 SETs in 21 cards, but could
+there be 1 or 2 or 3 SETs? Or are some of those a gap after a 20-card
+tipping\-point? The gap/sag pattern mentioned above seems to appear in multiple
+locations in Figure \ref{FIGROWSFULL}
+
+Interesting details emerge also on the right side of the graph, for large
+numbers of SETs. Since probabilities of $10^{-9}$ indicate a single sample
+encountered, surely we cannot infer with any certainty that there is a gap at 21
+cards from 42 to 45 SETs.
+
+But what about 20 cards and 37 SETs? Certainly with only 3 total occurrences of
+36 and 38 SETs in 20 cards, it would not be surprising for 37 SETs to have
+similar probability, and randomly not occur in 1 billion samples. However, note
+the sag in the 21-card curve at 38 SETs. This seems similar to the gap/sag
+pattern observed in the complete-enumeration data above, except occurring
+`after' the putative gap in the 20-curve, rather than directly `above'
+it. Perhaps this is an indication that there is actually a gap in the 20-curve
+at 37 SETs.
+\footnote{Or perhaps it is an indication of a sharp dropoff to a very small
+  probability, not a pure gap (probability 0). A number of deflections in
+  randomly-sampled curves are evident, but a little different than gap/sag
+  pattern observed above.  13 cards sags at 15 SETs (right after 12 cards ends
+  at 14 SETs); 18 cards sags at 27 SETs, right after 17 cards takes an apparent
+  90\% dive in probability between 25 SETs and 26-30 SETs. The 19- and 20-card
+  curves sag at 31 and 32 SETs, respectively, but not in response to any obvious
+  probability drop in the 18-card curve in that neighborhood.}
 
 \section{Conclusion}
 This paper improves on the speed of enumeration of starting deals for the card
