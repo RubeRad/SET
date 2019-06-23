@@ -570,6 +570,7 @@ void enumerate_serial(SmaInt k,
   double seconds0;
   restore_state(k, N0, seconds0, TOTAL_COUNTS, fname);
 
+//#define RANDO 1
 #ifdef RANDO
   std::mt19937_64::result_type seed = time(0);
   auto randy = std::bind(
@@ -884,6 +885,7 @@ void enumerate_opencl(SmaInt k,         // deal size
 SmaInt THREAD_CRDS = 3; // enumerate_thread will set this
 BigInt THREAD_BEGS[MAX_THREADS+1];
 BigInt THREAD_CNTS[MAX_THREADS][NUM_COUNTS];
+BigInt THREAD_EXMP[MAX_THREADS][NUM_COUNTS];
 
 
 void *enumerate_1thread(void *t) {
@@ -904,14 +906,17 @@ void *enumerate_1thread(void *t) {
 
   
   for (BigInt N=N0; N<NN; ++N) {
-#if RANDO
-    unrank_deal_serial(randy(), THREAD_CRDS, &d);
+#ifdef RANDO
+     BigInt NNN = randy();
 #else
-    unrank_deal_serial(N, THREAD_CRDS, &d);
+     BigInt NNN = N;
 #endif
+    unrank_deal_serial(NNN, THREAD_CRDS, &d);
     SmaInt nSETs = num_sets(&d, THREAD_CRDS);
     //printf("my_id = %ld nSETs = %d\n", my_id, nSETs);
     THREAD_CNTS[my_id][nSETs]++;
+    if (THREAD_EXMP[my_id][nSETs] == BigInt(-1))
+        THREAD_EXMP[my_id][nSETs] = NNN;
   }
   pthread_exit(NULL);
   return 0;
@@ -932,8 +937,12 @@ void enumerate_thread(SmaInt k,         // deal size
 
   THREAD_CRDS = k;
   BigInt TOTAL_COUNTS[NUM_COUNTS];
-  for (SmaInt i=0;  i<NUM_COUNTS;  ++i)
+  for (SmaInt i=0;  i<NUM_COUNTS;  ++i) {
     TOTAL_COUNTS[i] = 0;
+    for (SmaInt j=0; j<PARALLELS; ++j) {
+       THREAD_EXMP[j][i] = BigInt(-1);
+    }
+  }
 
   cout << "MAX_SECONDS for this run is " << MAX_SECONDS << endl;
 
@@ -1030,6 +1039,24 @@ void enumerate_thread(SmaInt k,         // deal size
     }
 #endif
   }
+
+  for (SmaInt i=0; i<NUM_COUNTS; ++i) {
+  for (SmaInt j=0; j<PARALLELS;  ++j) {
+     BigInt NNN = THREAD_EXMP[j][i];
+     if (NNN == BigInt(-1))
+        continue;
+     cout << "CARDS " << k << " SETS " << i << " ENUMERAL " << NNN;
+
+     deal_type d;
+     unrank_deal_serial(NNN, k, &d);
+     SmaInt nSETs = num_sets(&d, k);
+     if (nSETs != i)
+        cout << "ERROR!"<<endl;
+
+     for (SmaInt c=0; c<k; ++c)
+        cout << " " << tostr(create_card(d.card[c]));
+     cout << endl;
+  }}
    
   return;
 }
