@@ -18,26 +18,153 @@ def zero2nan(haszeros, outlen):
         hasnans.append(np.nan)
     return hasnans
 
-# set this True or False if you want more printouts 
-verbose = False
 
-# edit these to control what portion of data is graphed
-ncols = 47
-rowsk = range(3,13)     # range(3,13) actually creates the list [3,4,5,6,7,8,9.10,11,12]
-ktics = range(3,13,3)   # x-axis ticks at 3, 6, 9, 12
+def make_graph(percents,  # the data to graph
+               rows_k=range(3,13),  # which rows to include
+               cols_n=range(0,15),  # which columns to include
+               xtics=None,          # custom values to have xtick marks
+               curve_per_row=True,  # each row is one curve
+               lin_scale=True, # either/both
+               log_scale=True, 
+               legend=True,
+               auto_legend=False,
+               annotate=False):
 
-colsn = range(0,15)     # default [0,1,...14], because 12 cards has max 14 SETs
-ntics = range(0,15,2)   # x-axis ticks at 0,2,...14
+    # what's the smallest percent that will be graphed?
+    # we need this to set the log scale
+    minpct = 1.0
+    for k in rows_k:
+        for n in cols_n:
+            if pcts[k][n]:
+                minpct = min(percents[k][n], minpct)
+    power = math.log10(minpct)
+    miny = 10 ** (math.floor(power) - 1)
 
-# uncomment these to get fuller graphs including sampled k=13..21
-rowsk = range(3,22)
-ktics = (3,6,9,12,15,18,21) # Number of cards in an actual game can only be multiples of 3
-#ktics = (3,12,21)           # Min/Start/Max
-colsn = range(0,ncols)      # all possible nSETs
-ntics = list(range(0,ncols,5)) # don't crowd the x axis
-ntics.append(ncols-1)
+    # one graph or two?
+    nsubplots  = 1 if lin_scale else 0
+    nsubplots += 1 if log_scale else 0
+    if nsubplots==0:  # !!!
+        return
+
+    # two subplots, 2x1 means above/below, in 1 column    
+    fig,ax = plt.subplots(nsubplots,1)
+
+    fig.set_size_inches(16,9)
+
+    if nsubplots==2:
+        lin_ax = ax[0]
+        log_ax = ax[1]
+    else:
+        if lin_scale: lin_ax = ax
+        else:         log_ax = ax
+    top_ax = lin_ax if lin_scale else log_ax
+
+    # very light gray ledger lines in the log graph
+    log_labels = []
+    if log_scale:
+        for exp in range(10):
+            y = 10**(-exp)
+            xs = cols_n if curve_per_row else rows_k
+            log_ax.semilogy((xs[0],xs[-1]), (y,y), color='#dddddd', label=None)
+            log_labels.append(None)
+
+    # graph the curves
+    curve_per_col = not curve_per_row
+    ncurves = len(rows_k) if curve_per_row else len(cols_n)
+    for curve in range(ncurves):
+
+        if curve_per_row:
+            xs = cols_n
+            ys = zero2nan(percents[rows_k[curve], cols_n], len(cols_n))
+        else:
+            xs = rows_k
+            ys = zero2nan(percents[rows_k, cols_n[curve]], len(rows_k))
+
+        fmt = '-o'
+        if curve_per_row and curve>12:
+            fmt = '--o' # dashed lines for randomly sampled k>12 curves
+
+        if legend:
+            if curve_per_row: label = '{} cards'.format(rows_k[curve])
+            else:             label = '{} SETs' .format(cols_n[curve])
+        else:
+            label = None
+
+        # This is where the curve is actually plotted
+        if lin_scale: lin_ax.plot    (xs, ys, fmt, label=label)
+        if log_scale: log_ax.semilogy(xs, ys, fmt, label=label)
+        
+    # X axis formatting
+    xlabel = 'Number of SETs' if curve_per_row else 'Number of cards'
+    if log_scale: log_ax.set_xlabel(xlabel)
+    else:         lin_ax.set_xlabel(xlabel)
+
+    if xtics is None:
+        if curve_per_row: xtics = range(0,15)
+        else:             xtics = range(3,13,3)
+    if lin_scale: lin_ax.set_xticks(xtics)
+    if log_scale: log_ax.set_xticks(xtics)
+
+    # apply the y range if we have a log scale
+    if log_scale:
+        log_ax.set_ylim([miny,1.8])
+
+    # draw a dividing line between enumerated and sampled    
+    if curve_per_col and rows_k[-1] > 12:
+        if lin_scale:
+            lin_ax.plot([12.5,12.5], [0,1],     '-', color='#aaaaaa', linewidth=3)
+        if log_scale:
+            log_ax.plot([12.5,12.5], [miny,1.8],'-', color='#aaaaaa', linewidth=3)
+        top_ax.annotate('enumerated', (11.5, 0.9))
+        top_ax.annotate('sampled',    (12.6, 0.9))
+
+    if legend:
+        if auto_legend: # legend inside UR, eliminate margins
+            plt.subplots_adjust(left=.03, bottom=.05, right=0.99, top=0.99, hspace=0.1)
+            top_ax.legend(loc='upper right')
+        else: # Minimize most of the margins, except leave a wide margin on the right for the legend
+            plt.subplots_adjust(left=.03, bottom=.05, right=0.9,  top=0.99, hspace=0.1)
+            top_ax.legend(prop={'size': 14}, loc=(1.01, -0.3))
+    else: # no legend, push the right margin all the way out
+        plt.subplots_adjust(left=.03, bottom=.05, right=0.99, top=0.99, hspace=0.1)
+
+    if annotate and curve_per_col:
+        for n in cols_n:
+            for k in rows_k:
+                if percents[k][n] > 0:
+                    if   n in (25,30,32,34,40,46): pos = (k+.05, percents[k][n]*0.45)
+                    elif n == 28:                  pos = (k-.1,  percents[k][n]*0.45)
+                    elif n <  10:                  pos = (k-.2,  percents[k][n]*0.7)
+                    else:                          pos = (k-0.25,percents[k][n]*0.7)
+                    break
+
+            if   n==0:
+                if lin_scale: lin_ax.annotate('0 SETs', (2.75,0.9))
+                if log_scale: log_ax.annotate('0 SETs', (2.75,percents[3][0]*0.3))
+            elif n==1:
+                if lin_scale: lin_ax.annotate('1 SET',  (2.75,0.05))
+                if log_scale: log_ax.annotate('1 SET',  (2.75,percents[3][1]*0.3))
+            else:
+                if log_scale: log_ax.annotate(str(n), pos)
+        
+    plt.show()
+        
+
+        
+
+    
+    
+################################################################################    
+################################################################################    
+####################         Main Program starts here       ####################
+################################################################################    
+################################################################################    
+    
+
+# read and normalize the data
 
 # first create 3 empty rows
+ncols = 47
 listofrows = []
 for i in range(3):
    listofrows.append([0]*ncols)  # now we have 3x47 full of zeroes
@@ -52,8 +179,7 @@ with open('enumerate_deals.csv') as csvfile:
             continue
         rowsums.append( int (row[1]))
         seconds.append(float(row[2]))
-        if verbose:
-            print('k=', row[0], 'Rowsum:', rowsums[-1], 'seconds:', seconds[-1])
+
         nums = []
         for i in range(ncols):
             if len(row) > i+3:
@@ -65,12 +191,10 @@ with open('enumerate_deals.csv') as csvfile:
             else:
                 nums.append(0)
         listofrows.append(nums)
-        if verbose:
-            print(nums)
 
 
 data = np.array(listofrows)
-print('data size is', data.shape)
+#print('data size is', data.shape)
 
 # normalize as percentages and compute min pct (for graph y ranges)
 pcts = np.array(listofrows, 'float64')
@@ -79,110 +203,69 @@ for i in range(3,len(listofrows)):
     for j in range(ncols):
         pcts[i][j] = data[i][j] / tots[i]
 
-minpct = 1.0
-for k in rowsk:
-    for n in colsn:
-        if pcts[k][n]:
-            minpct = pcts[k][n]
-power = math.log10(minpct)
-miny = 10 ** (math.floor(power) - 1)
-if verbose:
-    print('minpct {:.2e} miny {}'.format(minpct, miny))
-
-
-# per-k curves, x axis is nSETs
-fig,ax = plt.subplots(2,1) # two subplots, 2x1 means above/below, in 1 column
-
-# very light gray ledger lines in the log graph
-for exp in range(10):
-   ax[1].semilogy((0,colsn[-1]), (10**(-exp), 10**(-exp)), color='#dddddd' )
-
-for rowi in rowsk:
-    # zero2nan replaces 0 with nan so linespoints will graph appropriately with gaps
-    ys = zero2nan(pcts[rowi, colsn], len(colsn))
-    # -o means lines and points, --o is dashed, colors are automatically chosen
-    fmt = '--o' if rowi>12 else '-o'
-    ax[0].plot    (colsn, ys, fmt) # ax[0] is top graph;   plot()   does lin scale
-    ax[1].semilogy(colsn, ys, fmt) # ax[1] is bot graph; semilogy() does log scale
-
-# deal with formatting issues
-if len(ntics) > 0 and ntics[-1] <= colsn[-1]: # if desired x-axis tick marks are specified
-    ax[0].set_xticks(ntics)
-    ax[1].set_xticks(ntics)
-ax[1].set_xlabel('Number of SETs') # label the lower x axis (applies to both)
-ax[1].set_ylim([miny,1.8])      # set the y-range of the log graph
-
-# Don't let the legend get out of control. Omit if too large
-plt.subplots_adjust(left=.05, bottom=.1, right=0.85, top=0.99, hspace=0.1)
-labelsk = []
-for i in rowsk:
-    labelsk.append('{} cards'.format(i))
-if len(labelsk) <= 20:
-    # Minimize most of the margins, except leave a wide margin on the right for the legend
-    plt.subplots_adjust(left=.03, bottom=.05, right=0.9,  top=0.99, hspace=0.1)
-    ax[0].legend(labelsk, prop={'size': 14}, loc=(1.01, -0.3))
-else:
-    # no legend, push the right margin all the way out
-    plt.subplots_adjust(left=.03, bottom=.05, right=0.99, top=0.99, hspace=0.1)
-
-plt.show()
-
-
-# per-nSETs curves, x axis is number of cards
-fig,ax = plt.subplots(2,1)
-
-# very light gray ledger lines in the log graph
-for exp in range(10):
-   ax[1].semilogy((rowsk[0],rowsk[-1]), (10**(-exp), 10**(-exp)), color='#dddddd' )
-
-for coli in colsn:                                 # for columns, not rows
-   ys = zero2nan(pcts[rowsk, coli], len(rowsk))    # each list of ys is all rows for a particular col
-   ax[0].plot    (rowsk, ys, '-o')
-   ax[1].semilogy(rowsk, ys, '-o')
-
- # draw a dividing line between enumerated and sampled    
-if rowsk[-1] > 12:
-   ax[0].plot([12.5,12.5], [0,1],     '-', color='#aaaaaa', linewidth=3)
-   ax[1].plot([12.5,12.5], [miny,1.8],'-', color='#aaaaaa', linewidth=3)
-   ax[0].annotate('enumerated', (11.5, 0.9))
-   ax[0].annotate('sampled',    (12.6, 0.9))
-
-if len(ktics) > 0 and ktics[-1]<=rowsk[-1]:        # mark X axis with ktics
-    ax[0].set_xticks(ktics)
-    ax[1].set_xticks(ktics)
-ax[1].set_xlabel('Number of cards')                # different X axis label
-ax[1].set_ylim([miny,1.8])
 
 
 
-labelsn = []
-for n in colsn:
-    labelsn.append('{} SETs'.format(n))            # different legend labels
-if len(labelsn) <= 20:
-    ax[0].legend(labelsn, prop={'size': 14}, loc=(1.01, -0.5))
-    plt.subplots_adjust(left=.03, bottom=.05, right=0.9,  top=0.99, hspace=0.1)
-else: # 
-    plt.subplots_adjust(left=.03, bottom=.05, right=0.99, top=0.99, hspace=0.1)
-    # annotate each curve
-    for coli in colsn:
-      # find first non-nan
-      for k in rowsk:
-         if pcts[k][coli] > 0:
-            if   coli in (25,30,32,34,40,46): pos = (k+.05, pcts[k][coli]*0.45)
-            elif coli == 28:                  pos = (k-.1,  pcts[k][coli]*0.45)
-            elif coli <  10:                  pos = (k-.2,  pcts[k][coli]*0.7)
-            else:                             pos = (k-0.25,pcts[k][coli]*0.7)
+# edit these to control what portion of data is graphed
+rowsk = range(3,13)     # range(3,13) actually creates the list [3,4,5,6,7,8,9.10,11,12]
+ktics = range(3,13,3)   # x-axis ticks at 3, 6, 9, 12
 
-            if   coli==0:
-               ax[0].annotate('0 SETs', (2.75,0.9))
-               ax[1].annotate('0 SETs', (2.75,pcts[3][0]*0.3))
-            elif coli==1:
-               ax[0].annotate('1 SET',  (2.75,0.05))
-               ax[1].annotate('1 SET',  (2.75,pcts[3][1]*0.3))
-            else:
-               ax[1].annotate(str(coli), pos)
-      
-            break;
+colsn = range(0,15)     # default [0,1,...14], because 12 cards has max 14 SETs
+ntics = range(0,15,2)   # x-axis ticks at 0,2,...14
+
+# uncomment these to get fuller graphs including sampled k=13..21
+rowsk = range(3,22)
+ktics = (3,6,9,12,15,18,21) # Number of cards in an actual game can only be multiples of 3
+#ktics = (3,12,21)           # Min/Start/Max
+colsn = range(0,ncols)      # all possible nSETs
 
 
-plt.show()
+
+
+make_graph(pcts)
+make_graph(pcts, curve_per_row=False)
+
+
+ntics = list(range(0,ncols,5))
+ntics.append(ncols-1)
+make_graph(pcts,
+           rows_k=range(3,22),
+           cols_n=range(0,ncols),
+           xtics=ntics)
+
+make_graph(pcts,
+           rows_k=range(3,22),
+           cols_n=range(0,ncols),
+           curve_per_row=False,
+           xtics=range(3,22,3),
+           legend=False,
+           annotate=True)
+
+xs = range(2)
+make_graph(pcts, rows_k=range(3,4), cols_n=xs, xtics=xs, log_scale=False, auto_legend=True)
+xs = range(2)
+make_graph(pcts, rows_k=range(3,5), cols_n=xs, xtics=xs, log_scale=False, auto_legend=True)
+xs = range(3)
+make_graph(pcts, rows_k=range(3,6), cols_n=xs, xtics=xs, log_scale=False, auto_legend=True)
+xs = range(4)
+make_graph(pcts, rows_k=range(3,7), cols_n=xs, xtics=xs, log_scale=False, auto_legend=True)
+xs = range(6)
+make_graph(pcts, rows_k=range(3,8), cols_n=xs, xtics=xs, log_scale=False, auto_legend=True)
+make_graph(pcts, rows_k=range(3,8), cols_n=xs, xtics=xs)
+make_graph(pcts, rows_k=range(3,8), cols_n=xs, xtics=xs, lin_scale=False, auto_legend=True)
+xs = range(9)
+make_graph(pcts, rows_k=range(3,9), cols_n=xs, xtics=xs, lin_scale=False, auto_legend=True)
+xs = range(13)
+make_graph(pcts, rows_k=range(3,10),cols_n=xs, xtics=xs, lin_scale=False, auto_legend=True)
+xs = range(13)
+make_graph(pcts, rows_k=range(3,11),cols_n=xs, xtics=xs, lin_scale=False, auto_legend=True)
+xs = range(14)
+make_graph(pcts, rows_k=range(3,12),cols_n=xs, xtics=xs, lin_scale=False, auto_legend=True)
+xs = range(15)
+make_graph(pcts, lin_scale=False, auto_legend=True)
+make_graph(pcts)
+
+
+    
+
+
