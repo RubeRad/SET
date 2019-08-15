@@ -122,8 +122,8 @@ find SETless $k$-sets, \SETSETb \cite{SETSET}.
 For instance, using the 4-digit ternary representation, the first 1-card deal is
 $\{0000\}$. Trivially, that 1-card set does not contain a SET; but more
 importantly, every other single-card set also does not contain a set, by
-isomorphism with the first one. Because of this isomorphism, \SETSETb was able to
-reject the other cards along with the first, as an isomorphism group all
+isomorphism with the first one. Because of this isomorphism, \SETSETb was able
+to reject the other 80 cards along with the first, as an isomorphism group all
 together.
 
 \SETSETb conducted a depth-first search of all sets of size up to 21, but was
@@ -141,13 +141,14 @@ hours.
 
 The `secret sauce' of \SETSETb is in what `isomorphic' means, and how to
 determine whether one set is isomorphic to another. Five years later (in an
-improved solution called \SETSETAb \cite{SETSET-ALL}), Knuth realized he could
-expand the sense of the isomorphisms, thus increasing the size of the
-isomorphism groups, and decreasing their number, which decreases the number of
-cases to consider. For instance, while \SETSETb considered 128 isomorphism groups
-for sets of size $k=4$, \SETSETAb dealt with only 2. In total, \SETSETAb dealt
-with only 9606 isomorphism groups, and thus had drastically improved speed,
-reaching the same answers as \SETSETb in just 3m45s (on the same hardware).
+improved solution called \SETSETAb \cite{SETSET-ALL}), Knuth expanded the sense
+of the isomorphisms, thus increasing the size of the isomorphism groups, and
+decreasing their number, which decreases the number of cases to consider. For
+instance, while \SETSETb considered 128 isomorphism groups for sets of size
+$k=4$, \SETSETAb dealt with only 2. In total, \SETSETAb dealt with only 9606
+isomorphism groups (vs $5.14\times 10^8$), and thus had drastically improved
+speed, reaching the same answers as \SETSETb in just 3m45s (on the same
+hardware).
 
 For 3 and 4 cards, the only posibilities are 0 SETs, or 1 SET, so a complete
 picture can be obtained by subtracting the 0-SET counts from
@@ -190,7 +191,7 @@ system. The forward sense of combinatorial numbering computes, for any
 particular $k$-set, where it 'ranks' in the enumeration of all $\binom{81}{k}$
 $k$-sets. The inverse process starts with an enumeral number $N$, and 'unranks'
 it into the $k$-set which occupies that place in the numbering system. The first
-iteration of \EDb used the unranking algorithm presented in \cite{WIKI}. In
+version of \EDb used the unranking algorithm presented in \cite{WIKI}. In
 order to unrank a combinatorial number $N$ into $k$ specific cards, the
 algorithm requires, for each of the $k$ cards, a number of comparisons to
 $\binom{n}{k}$, for $n\le 81, k\le 12$. To avoid $O(k)$ computation each for
@@ -212,7 +213,7 @@ In a later iteration of \ED, a combination-incrementing algorithm was
 implemented, with no branching (GPU programs are most efficient if there are no
 {\tt if} or {\tt while} statements, because simultaneous kernels execute the
 same line of code together, and kernels that take different paths through the
-code have to wait for each other). Instead of fully-unranking each combination
+code have to wait for each other). Instead of fully unranking each combination
 from its enumeral number, \EDb reuses the previous combination by incrementing
 it to the next combination in the series. Because of the avoidance of branching,
 the combination-increment algorithm takes exactly the same number of steps to
@@ -260,11 +261,12 @@ a Core i7 2.7GHz CPU, the 12-card enumeration ran at 842K/s (projected
 exhaustive enumeration time 972d=2.66y). Thus GPU processing yielded a
 218M/842K$\approx$256x speedup (at least comparing these specific processors).
 However, the Quadro P4000 has 1792 cores, so it seems possible that the GPU
-processing could be further optimized to obtain a 12-card enumeration time well
+processing could be further optimized to obtain over 1500x speedup, and
+a 12-card enumeration time well
 under 24 hours. Enumeration for $k=13$ or maybe 14 may become worthwhile, but
 combinatorial explosion quickly wins again, as runtimes increase about 7x for
 each larger $k$. Perhaps Knuth's isomorphism rejection technique could be
-extended to counting not just 0-SET deals, making possible exhaustive
+extended to count not just 0-SET deals, making possible exhaustive
 enumeration up to $k=21$ or possibly even $k=81$.
 
 \begin{table}
@@ -352,7 +354,7 @@ per table column (per deal size $k$), and Figure \ref{FIGROWS} in transpose ---
 one curve per number of SETs. 
 
 Figure \ref{FIGCOLS} graphs each column of the table (deal size $k$) as one
-curve. The horizontal axis is number of SETS, and the vertical axis is again
+curve. The horizontal axis is number of SETS, and the vertical axis is 
 probability (above, in linear scale, and below in log scale). The curves for
 $k=3$ (highest on the left) and $k=4$ have only two datapoints each, since the
 only possibilities for those cases are 0 SETs or 1 SET. $k=5$ introduces the
@@ -414,7 +416,7 @@ cards.
 
 In Figure \ref{FIGROWS}, each curve represents the probability of a certain
 number of SETs (one row of the table). The horizontal axis is the number of
-cards dealt, and the vertical axis is probability. The curve for 0 SETs starts
+cards dealt, and the vertical axis is again probability. The curve for 0 SETs starts
 at $84240/85320\approx 98.7\%$ for 3 cards, and only decreases as more cards are
 dealt. If the graph were to be extended to a deal size of $k=21$, the 0 SETs
 curve would reach $0\%$ exactly, but within this range it decreases at $k=12$ to
@@ -495,7 +497,7 @@ appeared, is that the earliest deals in the enumeral series contain cards that
 are very near each other, which means the cards have much more attribute
 similarity than for a randomly-sampled deal. In fact, \cite{VINCI} indicates
 that a maximum of 54 SETs is possible within 21 cards. But sampling just 1 or 10
-billion out of $\combin{81}{21}\approx 1.36\times 10^{19}$ 21-deals is
+billion out of $\binom{81}{21}\approx 1.36\times 10^{19}$ 21-deals is
 vanishingly unlikely to encounter such a configuration.
 
 %% Probabilities of $10^{-9}$ indicate a single sample
