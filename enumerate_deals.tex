@@ -59,7 +59,7 @@ In the card game \SET\cite{SET}, each card depicts 4 attributes (number,
 texture, color, shape), and each attribute has 3 possible values, for a total of
 $3^4=81$ cards. A `SET' is defined as a set\footnote{A note on terminology:
   \SETb will refer to the card game, `SET' will refer to a SET according to the
-  rules of the game, and 'set' will take its normal mathematical sense of an
+  rules of the game, and `set' will take its normal mathematical sense of an
   unordered collection. A $k$-set (or for instance 5-set or 12-set) will refer
   to a set of $k$ cards.} of 3 cards for which all attributes are either all the
 same, or all different. A fundamentally important fact about SETs is that, for
@@ -188,8 +188,8 @@ that practice here as well.
 
 Sets of $k$ cards are enumerated according to a combinatorial numbering
 system. The forward sense of combinatorial numbering computes, for any
-particular $k$-set, where it 'ranks' in the enumeration of all $\binom{81}{k}$
-$k$-sets. The inverse process starts with an enumeral number $N$, and 'unranks'
+particular $k$-set, where it `ranks' in the enumeration of all $\binom{81}{k}$
+$k$-sets. The inverse process starts with an enumeral number $N$, and `unranks'
 it into the $k$-set which occupies that place in the numbering system. The first
 version of \EDb used the unranking algorithm presented in \cite{WIKI}. In
 order to unrank a combinatorial number $N$ into $k$ specific cards, the
@@ -380,7 +380,7 @@ point; there is no way to add a \nth{7} card and complete only one more SET. The
   2 additional SETs?}
 
 It is also interesting to note that, corresponding to every gap in Figure
-\ref{FIGCOLS}, the subsequent curve 'sags' into that gap. For instance, the
+\ref{FIGCOLS}, the subsequent curve `sags' into that gap. For instance, the
 7-card curve has its gap at 4 SETs, and the 8-card curve has a deflection
 downwards at 4 SETs. (So just as the probability of 4 SETs in 7 cards is smaller
 than expected (small all the way down to 0!), the probability of 4 SETs in 8
@@ -399,7 +399,7 @@ The gaps in the 9-card enumeration are particularly interesting. The 1170 9-sets
 with 12 SETs are the complete collection of all possible planes (this matches
 the analytical result obtained in \cite{JOS}, p.~48). It is possible for 9 cards
 to have 8 SETs, as explained by Liz McMahon:\footnote{Co-author of \cite{JOS},
-  personal correspondence}
+  personal correspondence.}
 \begin{quote}
 If you take a plane [12 SETs] and remove one card, what's left has 8 SETs.  You
 can then add another point that doesn't complete any more SETs, and that gives
@@ -434,9 +434,10 @@ SET increases for a while, as more cards are dealt; but it peaks at $k=9$, and
 then falls off as it becomes more likely that 2 or more SETs will occur. The 2
 SET curve peaks at $k=11$. The 3 SET curve reaches its maximum within this range
 at $k=12$, and random-sampling for $k>12$ indicates that 12 cards is indeed the
-peak probability for 3 SETs.\footnote{The probability of 3 SETs in 12 cards is
-  exactly $19278240770880/\binom{81}{12}\approx 0.2726$, and the sampled
-  probability of 3 SETs in 13 cards is $246100265/10^9\approx 0.2461$.}
+peak probability for 3 SETs.\footnote{The exact probability of 3 SETs in 12
+cards is $19278240770880/\binom{81}{12}\approx 0.2726$, and the approximate
+probability of 3 SETs in 13 cards (as sampled from one billion deals) is
+$246100265/10^9\approx 0.2461$.}
 
 \begin{figure}[!htb]
   \center{\includegraphics[width=\textwidth]{kset_curves_full.png}}
