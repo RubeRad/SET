@@ -28,7 +28,8 @@ def make_graph(percents,  # the data to graph
                log_scale=True, 
                legend=True,
                auto_legend=False,
-               annotate=False):
+               annotate=False,
+               annotate89=False):
 
     # what's the smallest percent that will be graphed?
     # we need this to set the log scale
@@ -146,7 +147,31 @@ def make_graph(percents,  # the data to graph
                 if log_scale: log_ax.annotate('1 SET',  (2.75,percents[3][1]*0.3))
             else:
                 if log_scale: log_ax.annotate(str(n), pos)
+
+    if annotate89 and curve_per_row:
+        lin_ax.annotate('12 cards, 3 SETs (most likely)',
+                        (3, percents[12][3]), xytext=(3.5,0.4),
+                        arrowprops=dict(arrowstyle="->", color='k'))
+                         
         
+        log_ax.annotate('8 cards, 8 SETs', (8, percents[8][8]), xytext=(6.8,2e-8),
+                        arrowprops=dict(arrowstyle="->", color='k'))
+        log_ax.annotate('', (8, percents[9][8]), xytext=(8,percents[8][8]),
+                        arrowprops=dict(linestyle=':', arrowstyle="->", color='grey'))
+        log_ax.annotate('', (12,percents[9][12]), xytext=(8,percents[8][8]),
+                        arrowprops=dict(linestyle=':', arrowstyle="->", color='grey'))
+        log_ax.text(s='9 cards, 8 SETs  ', x=8, y=percents[9][8],
+                    horizontalalignment='right', verticalalignment='center')
+        log_ax.text(s="9 cards, 12 SETs ('plane')", x=12, y=1.5e-9, #percents[9][12],
+                    horizontalalignment='center')#verticalalignment='center')
+        log_ax.text(s='9th card', x=8.05, y=percents[8][8]+8e-8)
+        
+        log_ax.annotate('Sag', (11, percents[12][11]), xytext=(11.5,1e-5),
+                        arrowprops=dict(arrowstyle="->", color='k'))
+        log_ax.text(s='Gap', x=11, y=4e-7, horizontalalignment='center',
+                    verticalalignment='center')
+        
+                                
     plt.show()
         
 
@@ -221,6 +246,8 @@ colsn = range(0,ncols)      # all possible nSETs
 
 
 
+# annotate for CMJ
+make_graph(pcts, annotate89=True)
 
 make_graph(pcts)
 make_graph(pcts, curve_per_row=False)
