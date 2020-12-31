@@ -9,6 +9,7 @@
 
 \newcommand{\SET}{{\em SET}}
 \newcommand{\SETs}{{\em SET}s}
+\newcommand{\SETg}{{\bf SET}}
 
 \newcommand{\SETSET}{{\sc setset}}
 \newcommand{\SETSETb}{{\sc setset }}
@@ -21,7 +22,7 @@
 \begin{document}
 
 
-\title{Enumerating Deals in the Game of SET}
+\title{Enumerating Deals in the Game of \SETg}
 \author{Reuben Settergren}
 %\email{rjs@jhu.edu}
 
@@ -35,75 +36,98 @@
 \maketitle
 
 \section{What are the chances?}
-How often, when playing a game of SET\texttrademark, are you faced with a
+How often, when playing a game of \SETg\texttrademark, are you faced with a
 difficult opening deal of 12 cards? Is it really necessary to deal out another 3
-(or 6, or \ldots) cards? Or could one or more \SETs\footnote{A note on
-terminology: SET will refer to the card game, `\SET' will refer to three cards
-that meet the criteria for removal according to the rules of the game, and `set'
-will take its normal mathematical sense of an unordered collection. A $k$-set
-(or for instance 5-set or 12-set) will refer to a set of $k$ cards.} be hiding
-in those initial 12, to be found with further patient searching?  ``What are the
-chances,'' we all wonder, ``that an initial deal has no \SET?'' Or how about
-exactly 1 \SET? What is the mean number of \SETs~in an initial deal, or what if
-the game were changed to start with 9 cards? The beauty of SET is that it
-stimulates all sorts of lines of mathematical inquiry.
+(or 6, or \ldots) cards? Or could one or more \SETs~be hiding in those initial
+12, to be found with further patient searching?  ``What are the chances,'' we
+all wonder, ``that an initial deal has no \SET?'' Or how about exactly 1 \SET?
+What if the game were changed to start with 9 cards, what are the chances of 0
+or 1 or 2 \SETs?
 
+\begin{remark}
+A note on terminology: `\SETg' will refer to the card game, `SET' will refer to
+three cards that meet the criteria for removal according to the rules of the
+game, and `set' will take its normal mathematical sense of an unordered
+collection; in particular, a `$k$-set' will refer to a set of $k$ cards, and an
+`$m$-SET~$k$-set' is $k$ cards that have $m$ SETs. To use them all together in
+a sentence:
+\begin{quote}A 0-\SET~12-set is a starting \SETg~layout that
+  requires dealing 3 more cards.
+\end{quote}
+\end{remark}
 
-\section{The Game of SET}
-In the card game SET, each card depicts 4 attributes (number, texture, color,
-shape), and each attribute has 3 possible values, for a total of $3^4=81$
-cards. A \SET~is defined as a set of 3 cards for which all attributes are
-either all the same, or all different. A fundamentally important fact about
-\SETs~is that, for any two distinct cards, there is a unique third card which
-completes a \SET~with them. The unique \SET-mate of any two cards can be
-constructed by setting all four attributes appropriately: if the first two cards
-have the attribute the same, set the third the same; if they are different, set
-the third card's attribute different.
+In the literature on \SETg, some configurations of special interest have been
+combinatorially analyzed, such as the number of 2-\SET~5-sets, or 12-\SET~
+9-sets. This work provides a complete enumeration of the number of
+$m$-\SET~$k$-sets, for all $k\leq 12$ (because 12 is the starting deal for a
+game of \SETg) and $m\leq 14$ (because 14 is the maximum possible number of
+\SETs~in a 12-set \cite{VINCI}).
 
-\begin{figure}[!htb]
-  \center{\includegraphics[width=0.8\textwidth]{setmates.png}}
+\section{The Game of \SETg}
+\begin{figure}[!b]
+  \center{\includegraphics[width=0.6\textwidth]{setmates.png}}
   \caption{\label{SETMATES}Card {\em C} is the unique \SET-mate of cards {\em A}
-    and {\em B}, because each of {\em C}'s attributes (number, texture, color,
+    and {\em B}, because each of {\em C}'s attributes (number, shading, color,
     shape) are the same as or different from {\em A,B}, depending on whether
     that attribute is the same or different between {\em A} and {\em B}}.
 \end{figure}
+In \SETg, each card depicts 4 attributes (number, shading, color, shape),
+and each attribute has 3 possible values, for a total of $3^4=81$ cards. A
+\SET~is defined as a set of 3 cards for which all attributes are either all the
+same, or all different. A fundamentally important fact about \SETs~is that, for
+any two distinct cards, there is a unique third card which completes a \SET~with
+them. The unique \SET-mate of any two cards can be constructed by setting all
+four attributes appropriately: if the first two cards have the attribute the
+same, set the third the same; if they are different, set the third card's
+attribute different.
 
 After understanding the uniqueness of \SET-mates for any pair of cards, the next
-step in a mathematician's combinatorial journey into SET is to count the number
+step in a mathematician's combinatorial journey into \SETg~is to count the number
 of all possible \SETs. The number of {\em ordered} \SETs~ is $81\cdot 80$ (just
 pick two cards, the third is determined). So the number of {\em unordered}
 \SETs~can be obtained by dividing out the number of orderings of 3 cards:
 $$\frac{81\cdot 80}{3!} = 1080.$$
 
-The rules of SET specify that a game begins by dealing 12 cards, and additional
-groups of 3 as long as \SETs~cannot be found. So the question naturally arises,
-what is the probability that 12 cards have no \SET?  The instructions that come
-with SET \cite{SET} state that ``There are $\sim 33:1$ odds that a \SET~is
+The instructions for \SETg~\cite{SET} specify that a game begins by dealing 12
+cards, and additional groups of 3 as long as \SETs~cannot be found. So the
+question naturally arises, what is the probability that 12 cards have no \SET?
+The \SETg~instructions state that ``There are $\sim 33:1$ odds that a \SET~is
 present in 12 cards, and \mbox{$\sim 2500:1$} odds when 15 cards are on the
 table,'' i.e. probabilities of $\sim 1/34\sim 2.94\%$ (or perhaps they intended
 $1/33\sim 3.03\%$) and $\sim 1/2501\sim 0.04\%$, respectively. In the delightful
-book {\em The Joy of Set} (\cite{JOS} ch 10), McMahon and Gordon use a computer
+book {\em The Joy of Set} (\cite{JOS} Ch.~10), McMahon and Gordon use a computer
 simulation to sample 100 million deals, and encountered 3,228,460 \SET-less
 deals (3.22846\%), and report that this larger number is consistent with online
 reports of other simulations. But these approximate results, while practically
 useful, only whet the mathematician's appetite for exact answers.
 
 \section{Sets without \SETs}
-Before the game of SET was invented it was known (in equivalent form in the
+Before the game of \SETg~was invented it was known (in equivalent form in the
 field of Affine Geometry \cite{MAXCAP}) that the maximum number of cards with no
 \SET~is 20. So if hapless players keep dealing 3 more cards until they can't
 find a \SET~in 21 cards, they should look harder!  Knowing this limit, Donald
 Knuth \cite{SETSET}, \cite{SETSET-ALL} used a computer to efficiently calculate
 the number of \SET-less $k$-sets for $k\leq 21$. The efficiency of Knuth's
-solution relied on {\em isomorph rejection}. To illustrate this, let's adopt
-Knuth's abbreviated notation for SET, where cards are indicated as
-4-vectors. Each of the 4 coordinate dimensions represents one attribute (number,
-texture, color, shape), and the digits 1,2,3 represent the 3 possible values of
-that attribute. Thus the deck is represented by the 81 vectors (1,1,1,1),
-(1,1,1,2), (1,1,1,3), (1,1,2,1), \ldots (3,3,3,3).
+solution relied on {\em isomorph rejection}. 
 
 Two sets of cards are isomorphic if there is a rotation of attributes/values
-that maps one into the other. Knuth provides a specific example:
+that maps one into the other. An isomorphism could involve swapping shaded
+symbols for solid, rotating colors
+Red$\rightarrow$Green$\rightarrow$Purple$\rightarrow$Red, or mapping between
+number and shape ($1\leftrightarrow$ squiggle, $2\leftrightarrow$ oval,
+$3\leftrightarrow$ diamond). Given a specific set of $k$ cards which has $m$
+\SETs, all of these transformations yield different (but isomorphic) sets of $k$
+cards, with the same $m$ \SETs.
+
+For analysis with a computer program, however, Knuth adopted a numerical
+notation for \SETg, where cards are indicated as 4-vectors of integers 1-3. Each
+of the 4 coordinate dimensions represents one attribute (number, shading, color,
+shape), and each numerical coordinate the 3 possibilities for that
+attribute. Thus the deck is represented by the 81 vectors (1,1,1,1), (1,1,1,2),
+(1,1,1,3), (1,1,2,1), \ldots (3,3,3,3).
+
+Knuth provides the following illustration of isomorphism using his
+coordinate-vector convention:
 \begin{quotation}For example the set $\{(1,2,2,3), (2,2,3,3)\}$ is
   isomorphic to the set $\{(1,1,1,1),$ $(1,1,2,2)\}$, because we can interchange
   coordinates 1 and 4, then map $3\mapsto 1$ in coordinate~1, $2\mapsto1$ in
@@ -118,15 +142,17 @@ intermediate results are also isomorphic to the starting set):
   (\text{map coord 2:~} 2\mapsto 1)\rightarrow & \{(1,\mathbf{1},2,1), (1,\mathbf{1},3,2)\} \\
   (\text{map coord 3:~} (2,3)\mapsto(1,2))\rightarrow & \{(1,1,\mathbf{1},1), (1,1,\mathbf{2},2)\}
 \end{align*}
+(For more information on \SET-preserving affine transformations, see chapter 8
+of \cite{JOS}.)
 
-
-The `secret sauce' of Knuth's program (called \SETSET) is the realization that,
-once any specific set is determined to have a \SET~or not, all sets which are
-isomorphic have the same number of \SETs. As Knuth notes, ``There are $4! \times
-3!^4 = 31104$ isomorphisms, since we can permute the coordinates [attributes] in
-4! ways and we can permute the individual values of each coordinate position in
-3! ways.''  Thus counting the number of isomorphic \SETs~all at once can save a
-lot of time compared to a complete enumeration.
+The `secret sauce' of Knuth's program (called \SETSET) is that it takes
+advantage of the fact that, once any specific set is determined to have $m=0$
+\SETs~(or $m\geq 1$ \SETs), all sets which are isomorphic have the same number
+$m$ of \SETs, and can therefore be lumped into the same bucket. As Knuth notes,
+``There are $4! \times 3!^4 = 31104$ isomorphisms, since we can permute the
+coordinates [attributes] in 4! ways and we can permute the individual values of
+each coordinate position in 3! ways.''  Thus counting the number of isomorphic
+\SETs~all at once can save a lot of time compared to a complete enumeration.
 
 Consider the trivial questions, ``How many 1-sets or 2-sets are \SET-less?''
 Knuth's program arrives at the obvious answer of ``all of them''
@@ -134,7 +160,7 @@ Knuth's program arrives at the obvious answer of ``all of them''
 enumerating all $k$-sets and testing each one, but by testing only one per
 isomorphism group. All 81 1-sets are isomorphic to ${(1,1,1,1)}$, so the answer
 for $k=1$ requires only 1 test. 2-sets fall into 4 isomorphism groups, which are
-represented by these 2-sets:
+represented by these four 2-sets:
 \begin{itemize}
 \item $\{(1,1,1,1), (1,1,1,2)\}$ (isomorphism group size: 324)
 \item $\{(1,1,1,1), (1,1,2,2)\}$ (isomorphism group size: 972)
@@ -142,10 +168,10 @@ represented by these 2-sets:
 \item $\{(1,1,1,1), (2,2,2,2)\}$ (isomorphism group size: 648)
 \end{itemize}
 Those 4 isomorphism groups can be characterized as pairs of cards for which 3,
-2, 1, or 0 attributes match. (Why, combinatorially, are those isomorphism group
-sizes correct?) So \SETSETb is able to count the \SET-less 2-sets by adding up
-isomorphism groups for just 4 cases (324+972+1296+648=3240), rather than
-enumerating all 3240.
+2, 1, or 0 attributes match. (Why are those isomorphism group sizes correct? Try
+counting them combinatorially yourself.) So \SETSETb is able to count the
+\SET-less 2-sets by adding up isomorphism group sizes for just 4 cases
+(324+972+1296+648=3240), rather than enumerating all 3240.
 
 In the same manner, \SETSETb searches all sets of size up to 21 by starting with
 (1,1,1,1) and adding cards, but pruning the search tree and backtracking to try
@@ -155,12 +181,14 @@ adding a different card, whenever:
 \item Adding another card forms a set which is isomorphic to a
   previously-accounted-for \SET-less set.
 \end{itemize}
-\SETSETb ends early when conditions are met that guarantee that all
-subsequent cards are in previously-accounted-for isomorphism groups. In this
-way, \SETSETb was able to count all the \SET-less sets within
+\SETSETb ends early when conditions are met that guarantee that all subsequent
+cards are in previously-accounted-for isomorphism groups. In this way, \SETSETb
+was able to count all the \SET-less sets within
 $\Sigma_{k=1}^{21}\binom{81}{k}\sim 2.04\times 10^{19}$ sets, by inspecting only
 514,488,889 cases, and avoiding inspection of isomorphic cases. Running \SETSETb
-on my laptop takes about four and a half hours.
+on my laptop takes about four and a half hours. The results of \SETSETb for
+$k\leq 12$ are a subset of the complete enumeration results in this paper, and
+can be found as row 0 of Table \ref{THE_TABLE}.
 
 A few years later, Knuth improved on \SETSETb with a better program called
 \SETSETA, by expanding the sense of isomorphic equivalence, yielding larger
@@ -171,7 +199,7 @@ the 514,488,889 isomorphism groups processed by \SETSETb to only 9606, and thus
 had drastically improved speed -- reaching the same answers as \SETSETb in just
 3m45s (on the same hardware).
 
-Knuth's \SETSETb programs yield the exact answer for that SET question of first
+Knuth's \SETSETb programs yield the exact answer for that \SETg~question of first
 importance, ``What is the chance that an initial deal of 12 cards has no \SET?''
 The number of 12-sets with no \SET~is 2,284,535,476,080, so in combination with
 the simple combinatoric fact that there are $\binom{81}{12}$ 12-sets in all, the
@@ -181,28 +209,28 @@ $$\frac{2284535476080}{70724320184700} = 3.23020\ldots\%.$$
 
 \section{Sets with \SETs}
 As satisfying as that exact answer is, Knuth's \SETSETb programs only consider
-sets that have 0 \SETs. The curiosity of SET-playing mathematicians (or without
+sets that have 0 \SETs. The curiosity of \SETg-playing mathematicians (or without
 loss of generality, all mathematicians!) naturally turns to sets that do contain
 \SETs. What are the chances there is just one \SET~hiding in that initial deal
 of 12, vs an easier-to-find 2 (or 3 (or more))?
 
-Let's start small (see ch 5 of \cite{JOS} for the fuller combinatorial analysis of
-$k=3,4,5$). For $k=3$, the only posibilities are 1 \SET~(the 3 cards {\em are}
-a \SET), or 0 \SETs~(they {\em aren't}). Of the $\binom{81}{3}=85320$ 3-sets,
-1080 are \SETs, thus $85320-1080=84240$ are \SET-less (\SETSETb yields
+Let's start small (see Ch.~5 of \cite{JOS} for the fuller combinatorial analysis
+of $k=3,4,5$). For $k=3$, the only posibilities are 1 \SET~(the 3 cards {\em
+  are} a \SET), or 0 \SETs~(they {\em aren't}). Of the $\binom{81}{3}=85320$
+3-sets, 1080 are \SETs, thus $85320-1080=84240$ are \SET-less (\SETSETb yields
 the same result in reverse: since 84240 3-sets are \SET-less, 85320-84240=1080
 must have \SETs). Similarly, the $\binom{81}{4}$ 4-sets break down into 1579500
 that have 0 \SETs, and 84240 that have 1 \SET.
 \begin{remark}Did you notice that number 84240 just turned up twice? It is the
-number of 3-sets {\bf without} \SETs, and the number of 4-sets {\bf with} a
-\SET. Both times it is 78*1080, but for different reasons. As we saw above, the
-number of 3-deals with 1 SET (the number of 3-deals which {\em are} a SET) is
+number of 3-sets {\bf without} SETs, and the number of 4-sets {\bf with} a
+SET. Both times it is 78*1080, but for different reasons. As we saw above, the
+number of 3-sets with 1 SET~(the number of 3-sets which {\em are} a SET) is
 1080. But whenever two of the 81 cards are dealt, there are 79 remaining cards
--- one of which completes a SET and 78 of which do not. So the number of 0-SET
-triples are 78 times as many as 1-SET triples. However, every 4-set with 1 SET
-is a 3-deal with 1 SET, plus one more card. After a SET is laid out, there are
-78 remaining cards which could be added to form a 1-SET 4-deal. So the number of
-1-SET 4-deals is also 78 times as many as 1-SET triples.
+-- one of which completes a SET~and 78 of which do not. So the number of
+0-SET~triples are 78 times as many as 1-SET~triples. However, every 4-set with
+1 SET~is a 3-set with 1 SET, plus one more card. After a SET~is laid out,
+there are 78 remaining cards which could be added to form a 1-SET~4-set. So
+the number of 1-SET~4-set is also 78 times as many as 1-SET~triples.
 \end{remark}
 
 So for $k=3,4$, since the only possibilities are 0 or 1 \SETs, the \SET-less
@@ -213,7 +241,7 @@ share one card. (But it is impossible for two \SETs~to share two cards -- why?)
 So although \SETSETb~tells us that 22,441,536 of the $\binom{81}{5}$ 5-sets have
 0 \SETs, it doesn't tell us how the remaining 5-sets divide up between those
 that have 1 \SET~or 2 \SETs. Combinatorics (\cite{JOS}, pp.~56-58) yields counts
-of 3,116,880 with 1 SET and 63,180 with 2 SETs. As $k$ increases, however, so
+of 3,116,880 with 1 \SET~and 63,180 with 2 \SETs. As $k$ increases, however, so
 does the complexity of combinatorial analysis, and $k=12$ is way too complex!
 
 \section{Counting up to 12}
@@ -234,21 +262,13 @@ serially, or in parallel using threads or OpenCL \cite{OPENCL} kernels. Note
 that OpenCL can be configured so that its kernels can be parallelized onto
 either CPU or GPU resources.
 
-Skipping over many interesting implementation details,\footnote{Available in a
-larger paper, also on GitHub.} like how to systematically traverse all
-$\binom{81}{12}$ initial deals \cite{WIKI}, \EDb accomplished an exhaustive
-enumeration for up to 12 cards, and the results are presented in Table
-\ref{THE_TABLE}. Columns of the Table are numbers of cards $k$, and rows are
-numbers of \SETs~found in those $k$-\SETs.  The top row of the table (0 \SETs)
-matches the results of \SETSET, so that's a vote of confidence.
-
 \begin{table}
   \caption{Enumeration Results}\label{THE_TABLE}
   \centering
   \begin{tabular}{r | r r r r r r }
     & \multicolumn{6}{c}{Number of cards} \\
     \hline\hline
-    SETs & 3 & 4 & 5 & 6 & 7 & 8   \\
+    \SETs & 3 & 4 & 5 & 6 & 7 & 8   \\
     \hline
 0  & 84240 & 1579500 & 22441536 & 247615056 & 2144076480 & 14587567020  \\
 1  & 1080 & 84240 & 3116880 & 71772480 & 1137240000 & 12981215520 \\
@@ -268,7 +288,7 @@ seconds & 0.001 & 0.002 & 0.045 & 0.56 & 6.3 & 69
   \vskip 5mm
 
   \begin{tabular}{r | r r r r }
-    SETs & 9 & 10 & 11 & 12 \\
+    \SETs & 9 & 10 & 11 & 12 \\
     \hline
 0  & 77541824880 & 318294370368 & 991227481920 & 2284535476080 \\
 1  & 108956689920 & 676366666560 & 3091339021680 & 10266579666720 \\
@@ -292,6 +312,14 @@ seconds & 646 & 5697 & 45298 & 324480
   \end{tabular}
 \end{table}
 
+Skipping over many interesting implementation details,\footnote{Available in a
+larger paper, also on GitHub \cite{ME}.} like how to systematically traverse all
+$\binom{81}{12}$ initial deals \cite{WIKI}, \EDb accomplished an exhaustive
+enumeration for up to 12 cards, and the results are presented in Table
+\ref{THE_TABLE}. Columns of the Table are numbers of cards $k$, and rows are
+numbers of \SETs~found in those $k$-\SETs.  The top row of the table (0 \SETs)
+matches the results of \SETSET, so that's a vote of confidence.
+
 The bottom row of the table is wall-clock computation time for the GPU (NVIDIA
 Quadro P4000). The total time for $k=3\ldots 12$ was 104.5h=4.35d, of which
 90.1h = 3.75d was required for $k=12$ (because of combinatorial explosion, the
@@ -305,32 +333,26 @@ exhaustive enumeration time 972d=2.66y). Thus GPU processing yielded a
 One interesting feature of the table is repeated numbers. The count of 84240
 shows up 4 times (as well as its half 42120), 3032640 three times, and 160729920
 twice. The table is full of multiples of 1080 (the number of \SETs), and also of
-1170 (the number of 9-sets with 12 SETs, aka {\em planes}, see below for more,
-and \cite{JOS} for an extensive treatment of the relationship between SET and
+1170 (the number of 9-sets with 12 \SETs, aka {\em planes}, see below for more,
+and \cite{JOS} for an extensive treatment of the relationship between \SETg~and
 affine projective geometry). This repetition invites questions such as, is there
-a meaningful bijection between the 9-sets with 5 SETs, and the 12-sets with 11
-SETs (both 160729920)? Or is the repetition just a coincidence from
-combinatorial reuse of so many of the same prime factors?
+a meaningful bijection between the 5-\SET~9-sets, and 11-\SET~12-sets (both
+160729920)? Or is the repetition just a coincidence from combinatorial reuse of
+so many of the same prime factors?
 
-One interesting question the Table can answer for us is the average number of
-\SETs~per starting deal. This expected value is actually known analytically; a
-clever combinatorial argument (see \cite{JOS}, pp 59-62) yields:
-$$E[\text{\em SET}s}] = \frac{1080\times
-    \binom{78}{9}}{\binom{81}{12}}=2.78481\ldots$$
-The numerator of that fraction basically reads ``each possible \SET~(1080 of
-them) and 9 more cards (of the remaining 78).'' This elegant result is obtained
-without knowledge of individual probabilities of 0, 1, \ldots 14 \SETs, but it
-is confirmed by computing an expected value directly from those probabilities,
-from the column for $k=12$:
-$$\frac{0\cdot 2284535476080 + 1\cdot 10266579666720 + \ldots + 14\cdot
-  3032640}{\binom{81}{12}}$$
-$$=\frac{196953803046000}{70724320184700}=\frac{220}{79}=2.78481\ldots$$
-
-Another very obvious feature of the Table is gaps. The first gap appears in the
-7 column, and from it we can see that a set of 7 cards can have 0, 1, 2, 3, or 5
-SETs, but not exactly 4 SETs. There are also gaps in the 8, 9, 10, and 11-card
-columns, but the 12-card initial deal has no gaps; any number of sets from 0 to
-14 (the max possible for 12 cards \cite{VINCI}) could occur.
+%% One interesting question the Table can answer for us is the average number of
+%% \SETs~per starting deal. This expected value is actually known analytically; a
+%% clever combinatorial argument (see \cite{JOS}, pp 59-62) yields:
+%% $$E[\text{{\em SET}s}] = \frac{1080\times
+%%     \binom{78}{9}}{\binom{81}{12}}=2.78481\ldots$$
+%% The numerator of that fraction basically reads ``each possible \SET~(1080 of
+%% them) and 9 more cards (of the remaining 78).'' This elegant result is obtained
+%% without knowledge of individual probabilities of 0, 1, \ldots 14 \SETs, but it
+%% is confirmed by computing an expected value directly from those probabilities,
+%% from the column for $k=12$:
+%% $$\frac{0\cdot 2284535476080 + 1\cdot 10266579666720 + \ldots + 14\cdot
+%%   3032640}{\binom{81}{12}}$$
+%% $$=\frac{196953803046000}{70724320184700}=\frac{220}{79}=2.78481\ldots$$
 
 \begin{figure}[!htb]
   \center{\includegraphics[width=0.6\textwidth]{setplanemed.png}}
@@ -342,21 +364,21 @@ columns, but the 12-card initial deal has no gaps; any number of sets from 0 to
     directions.}
 \end{figure}
 
-The most interesting column is probably 9 cards, because of connections to
+The most interesting Table column is probably 9 cards, because of connections to
 planes in affine projective geometry. A plane is 9 cards that contains 12 \SETs,
 which can be arranged 3x3 so that \SETs~are horizontal, vertical, and diagonal
 lines (see Figure \ref{PLANE}). A plane can be generated from any 3 cards that
-are not a \SET~(just as a Euclidean plane is determined by any 3 points that are
-not on the same line), by computing the closure (adding \SET-mates until every
-pair's \SET-mate is present). The number of 3x3-arranged planes is $81\cdot
-80\cdot 78=505440$ (two cards are chosen freely, the third card cannot be the
-one that completes a \SET, and then the remaining six cards are
-determined). Dividing out the number of 3x3 arrangements of any 9-card plane
+are not a \SET~(just as a plane in Euclidean 3-space is determined by any 3
+points that are not on the same line), by computing the closure (adding
+\SET-mates until every pair's \SET-mate is present). The number of 3x3-arranged
+planes is $81\cdot 80\cdot 78=505440$ (two cards are chosen freely, the third
+card cannot be the one that completes a \SET, and then the remaining six cards
+are determined). Dividing out the number of 3x3 arrangements of any 9-card plane
 (which is $9\cdot 8\cdot 6$ -- why?), we see that the number of planes is
 $$\frac{81\cdot 80\cdot 78}{9\cdot 8\cdot 6} = 1170$$
 which is confirmed in the Table at column 9, row 12.
 
-The situation in which 9 cards has 8 SETs, is explained by Liz McMahon, along
+The situation in which 9 cards has 8 \SETs, is explained by Liz McMahon, along
 with combinatorial interjections:\footnote{Co-author of \cite{JOS}, personal
 correspondence.}
 \begin{quote}
@@ -370,9 +392,23 @@ impossible to have 9-sets with 9, 10, or 11 \SETs. An 8-\SET~8-set is at a
 tipping point, so that any \nth{9} card that completes any \SET~also completes
 three more.
 
+This brings up a visually obvious feature of the Table: gaps. The large gap in
+the 9-set column is explained above, but gaps show up in all the columns $7\leq
+k \leq 11$. The first gap in the 7-set column, shows us that 7 cards can have 0,
+1, 2, 3, or 5 \SETs, but not exactly 4 \SETs. Gaps in the 7 and 8 columns grow
+toward the 9 column, and then shrink again. And finally, 12-card column has no
+gaps; any number of sets from 0 to 14 (the max possible for 12 cards) could
+occur in an initial \SETg~layout of 12 cards.
+
 Although the gaps in the Table are obvious, more subtle patterns in the data
 appear when graphed, as in Figure \ref{FIGCOLS}, where each column of the Table
 (deal size) is one curve.
+
+\begin{figure}[!htb]
+  \center{\includegraphics[width=\textwidth]{annotated.png}}
+  \caption{\label{FIGCOLS} Each curve is one deal size (table column); $X$ is
+    number of \SETs, $Y$ is probability.}
+\end{figure}
 
 Looking down the left side of Figure \ref{FIGCOLS}, for number of \SETs=0, we
 see at the top of the stack, 3 cards has the highest probability of 0 \SETs, and
@@ -399,12 +435,6 @@ how adjacent curves `sag' into the gaps. The biggest sag is in the 12-curve at
 curves. Evidently, the impossibility of 11 \SETs~in fewer than 12 cards
 diminishes the probability of 11 \SETs~in 12 cards. Other sags are evident above
 other gaps.
-
-\begin{figure}[!htb]
-  \center{\includegraphics[width=\textwidth]{annotated.png}}
-  \caption{\label{FIGCOLS} Each curve is one deal size (table column); $X$ is
-    number of SETs, $Y$ is probability.}
-\end{figure}
 
 \section{Conclusion}
 This paper improves on the speed of enumeration of starting deals for the card
@@ -443,14 +473,14 @@ isomorphism-rejection-based enumerations of the 0-\SET~problem).
   $S_{4,3}$'' [{\em The maximal order of the shperical cap in $S_{4,3}$}], {\em
   Matematiche} {\bf 25}, pp 149-157.
 
-\bibitem{SET} SET Enterprises, Inc. \url{https://www.setgame.com}
+\bibitem{SET}PlayMonster, LLC. \url{playmonster.com/brands/set}, accessed \today.
 
-\bibitem{ME}Settergren, Reuben, 2019. \url{https://github.com/RubeRad/SET}
+\bibitem{ME}Settergren, Reuben, 2019. \url{github.com/RubeRad/SET}, accessed \today.
   
 \bibitem{VINCI}Vinci, Jim, 2009. ``The maximum number of sets for $n$ cards and
   the total number of internal sets for all partitions of the deck,'' on the
   SET game website at
-  \url{https://www.setgame.com/sites/default/files/teacherscorner/SETPROOF.pdf},
+  \url{playmonster.com/wp-content/uploads/2019/10/SETPROOF.pdf},
   accessed \today.
 
 \bibitem{WIKI} Wikipedia article ``Combinatorial Number System,'' \url{https://en.wikipedia.org/wiki/Combinatorial_number_system#Finding_the_k-combination_for_a_given_number},
